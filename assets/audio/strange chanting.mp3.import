@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://beeihoo71joku"
+path="res://.godot/imported/strange chanting.mp3-b864e7258e23f5ac88c86efad6dc9530.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/strange chanting.mp3"
+dest_files=["res://.godot/imported/strange chanting.mp3-b864e7258e23f5ac88c86efad6dc9530.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

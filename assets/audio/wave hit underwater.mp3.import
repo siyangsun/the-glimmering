@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://cavl0h7ve0j5e"
+path="res://.godot/imported/wave hit underwater.mp3-d5171b9fdfd7fecc42392846fb363e4f.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/wave hit underwater.mp3"
+dest_files=["res://.godot/imported/wave hit underwater.mp3-d5171b9fdfd7fecc42392846fb363e4f.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

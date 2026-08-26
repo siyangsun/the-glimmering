@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://b18tas7be6ocj"
+path="res://.godot/imported/you dare return.mp3-27afc1d0e9001ed5be534f6140285a92.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/you dare return.mp3"
+dest_files=["res://.godot/imported/you dare return.mp3-27afc1d0e9001ed5be534f6140285a92.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

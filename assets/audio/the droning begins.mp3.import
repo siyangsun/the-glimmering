@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://cpcgtsmgdjn0f"
+path="res://.godot/imported/the droning begins.mp3-5d366863f26714d56acf2b6e16b10728.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/the droning begins.mp3"
+dest_files=["res://.godot/imported/the droning begins.mp3-5d366863f26714d56acf2b6e16b10728.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

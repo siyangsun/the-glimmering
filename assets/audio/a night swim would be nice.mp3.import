@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dlqod3yqrvr71"
+path="res://.godot/imported/a night swim would be nice.mp3-372a610e734324d9a7ba67af5ae55356.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/a night swim would be nice.mp3"
+dest_files=["res://.godot/imported/a night swim would be nice.mp3-372a610e734324d9a7ba67af5ae55356.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://j57vk1ivunmn"
+path="res://.godot/imported/strange ringing.mp3-ded16dba49089f86c6a630c6c5db8961.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/strange ringing.mp3"
+dest_files=["res://.godot/imported/strange ringing.mp3-ded16dba49089f86c6a630c6c5db8961.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

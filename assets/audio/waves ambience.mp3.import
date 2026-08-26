@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bs0ekrac25uku"
+path="res://.godot/imported/waves ambience.mp3-2d4c90d83e3c5aff8c0a7754d97036c5.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/waves ambience.mp3"
+dest_files=["res://.godot/imported/waves ambience.mp3-2d4c90d83e3c5aff8c0a7754d97036c5.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
