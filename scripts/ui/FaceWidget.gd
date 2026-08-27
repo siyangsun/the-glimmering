@@ -136,7 +136,7 @@ func _process(_delta: float) -> void:
 	_eyewater_l.visible = wet
 	_eyewater_r.visible = wet
 
-	_nose_particles.emitting = _nose_reg["held"]
+	_nose_particles.emitting = DrownMeter.value > 0.0
 	ImpairmentSystem.eyes_shielded = _eyes_reg["over"]
 	ImpairmentSystem.nose_shielded = _nose_reg["held"]
 
