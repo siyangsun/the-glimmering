@@ -1,7 +1,7 @@
 extends Node
 
 const FILL_RATE: float = 0.030       # per second while nose is clogged
-const DRAIN_RATE: float = 0.050      # per second while nose is clear
+const DRAIN_RATE: float = 0.025      # per second while nose is clear
 const WAVE_HIT_AMOUNT: float = 0.04  # burst per wave hit, scaled by wave size
 
 var value: float = 0.0
@@ -15,8 +15,9 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if not GameManager.is_playing:
 		return
+	var shield: float = ImpairmentSystem.SHIELD_FACTOR if ImpairmentSystem.nose_shielded else 1.0
 	if ImpairmentSystem.nose_impaired:
-		value = min(value + FILL_RATE * delta, 1.0)
+		value = min(value + FILL_RATE * shield * delta, 1.0)
 		if value >= 1.0:
 			SignalBus.game_ended.emit(&"drown")
 	else:
@@ -25,4 +26,5 @@ func _process(delta: float) -> void:
 func _on_wave_hit(wave_data: WaveData) -> void:
 	if not GameManager.is_playing:
 		return
-	value = min(value + wave_data.size * WAVE_HIT_AMOUNT, 1.0)
+	var shield: float = ImpairmentSystem.SHIELD_FACTOR if ImpairmentSystem.nose_shielded else 1.0
+	value = min(value + wave_data.size * WAVE_HIT_AMOUNT * shield, 1.0)

@@ -11,7 +11,7 @@ const CORNER_MARGIN: Vector2 = Vector2(28.0, 28.0)
 
 const EYE_L_CENTER: Vector2 = Vector2(20.0, 28.0)
 const EYE_R_CENTER: Vector2 = Vector2(46.0, 28.0)
-const NOSE_CENTER: Vector2  = Vector2(33.0, 35.0)
+const NOSE_CENTER: Vector2  = Vector2(33.0, 37.0)
 const EYE_HOVER_PAD_SIDE: float = 22.0
 const EYE_HOVER_PAD_TOP: float  = 22.0
 const EYE_HOVER_PAD_BOT: float  = 4.0
@@ -138,6 +138,7 @@ func _process(_delta: float) -> void:
 
 	_nose_particles.emitting = _nose_reg["held"]
 	ImpairmentSystem.eyes_shielded = _eyes_reg["over"]
+	ImpairmentSystem.nose_shielded = _nose_reg["held"]
 
 	var shut: bool = _eyes_reg["held"] or _nose_reg["held"] or ImpairmentSystem.eyes_value >= ImpairmentSystem.EYE_MAX
 	if shut == _eyes_shut:
