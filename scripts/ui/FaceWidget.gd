@@ -42,6 +42,8 @@ var _tex_eye_shut: Texture2D
 var _face: TextureRect
 var _eye_l: TextureRect
 var _eye_r: TextureRect
+var _eyewater_l: TextureRect
+var _eyewater_r: TextureRect
 var _nose: TextureRect
 
 var _eye_region: Rect2 = Rect2()
@@ -58,15 +60,21 @@ func _ready() -> void:
 	_tex_eye_open = load("res://assets/sprites/eyeopen.png")
 	_tex_eye_shut = load("res://assets/sprites/eyeshut.png")
 
-	# Draw order: face, then eyes, then nose on top.
-	_face  = _make_sprite(load("res://assets/sprites/mysteryman.png"), FACE_SCALE)
-	_eye_l = _make_sprite(_tex_eye_open, EYE_SCALE)
+	# Draw order: face, eyes, eyewater, nose on top.
+	var tex_eyewater: Texture2D = load("res://assets/sprites/eyewater.png")
+	_face       = _make_sprite(load("res://assets/sprites/mysteryman.png"), FACE_SCALE)
+	_eye_l      = _make_sprite(_tex_eye_open, EYE_SCALE)
 	_eye_l.flip_h = true
-	_eye_r = _make_sprite(_tex_eye_open, EYE_SCALE)
-	_nose  = _make_sprite(load("res://assets/sprites/nose.png"), NOSE_SCALE)
+	_eye_r      = _make_sprite(_tex_eye_open, EYE_SCALE)
+	_eyewater_l = _make_sprite(tex_eyewater, EYE_SCALE)
+	_eyewater_l.flip_h = true
+	_eyewater_r = _make_sprite(tex_eyewater, EYE_SCALE)
+	_nose       = _make_sprite(load("res://assets/sprites/nose.png"), NOSE_SCALE)
 	add_child(_face)
 	add_child(_eye_l)
 	add_child(_eye_r)
+	add_child(_eyewater_l)
+	add_child(_eyewater_r)
 	add_child(_nose)
 
 	get_viewport().size_changed.connect(_layout)
@@ -82,10 +90,12 @@ func _make_sprite(tex: Texture2D, s: float) -> TextureRect:
 
 func _layout() -> void:
 	var origin: Vector2 = get_viewport_rect().size - _FACE_PX * FACE_SCALE - CORNER_MARGIN
-	_face.position  = origin
-	_eye_l.position = origin + EYE_L_CENTER * FACE_SCALE - _EYE_PX * EYE_SCALE * 0.5
-	_eye_r.position = origin + EYE_R_CENTER * FACE_SCALE - _EYE_PX * EYE_SCALE * 0.5
-	_nose.position  = origin + NOSE_CENTER * FACE_SCALE - _NOSE_PX * NOSE_SCALE * 0.5
+	_face.position       = origin
+	_eye_l.position      = origin + EYE_L_CENTER * FACE_SCALE - _EYE_PX * EYE_SCALE * 0.5
+	_eye_r.position      = origin + EYE_R_CENTER * FACE_SCALE - _EYE_PX * EYE_SCALE * 0.5
+	_eyewater_l.position = _eye_l.position
+	_eyewater_r.position = _eye_r.position
+	_nose.position       = origin + NOSE_CENTER * FACE_SCALE - _NOSE_PX * NOSE_SCALE * 0.5
 
 	var l: Rect2 = Rect2(_eye_l.position, _EYE_PX * EYE_SCALE)
 	var r: Rect2 = Rect2(_eye_r.position, _EYE_PX * EYE_SCALE)
@@ -94,6 +104,10 @@ func _layout() -> void:
 
 # eyes_value is a plain float with no change signal, so poll it — one comparison.
 func _process(_delta: float) -> void:
+	var wet: bool = ImpairmentSystem.eyes_value > 0.0
+	_eyewater_l.visible = wet
+	_eyewater_r.visible = wet
+
 	var shut: bool = _fist_held or ImpairmentSystem.eyes_value >= ImpairmentSystem.EYE_MAX
 	if shut == _eyes_shut:
 		return
