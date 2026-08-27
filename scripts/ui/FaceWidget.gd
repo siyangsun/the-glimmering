@@ -14,8 +14,8 @@ const EYE_SCALE: float  = 6.0    # eyeopen/eyeshut.png are 20x12
 const NOSE_SCALE: float = 4.8    # nose.png is 28x24
 const CORNER_MARGIN: Vector2 = Vector2(28.0, 28.0)  # gap from the screen corner
 
-const EYE_L_CENTER: Vector2 = Vector2(21.0, 25.0)
-const EYE_R_CENTER: Vector2 = Vector2(43.0, 25.0)
+const EYE_L_CENTER: Vector2 = Vector2(19.0, 27.0)
+const EYE_R_CENTER: Vector2 = Vector2(45.0, 27.0)
 const NOSE_CENTER: Vector2  = Vector2(32.0, 35.0)
 const EYE_HOVER_PAD: float  = 14.0  # extra screen px around the eyes counting as hover
 
