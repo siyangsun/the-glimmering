@@ -18,8 +18,8 @@ const EYE_L_CENTER: Vector2 = Vector2(20.0, 28.0)
 const EYE_R_CENTER: Vector2 = Vector2(46.0, 28.0)
 const NOSE_CENTER: Vector2  = Vector2(33.0, 35.0)
 const EYE_HOVER_PAD_SIDE: float = 22.0
-const EYE_HOVER_PAD_TOP: float  = 14.0
-const EYE_HOVER_PAD_BOT: float  = 8.0
+const EYE_HOVER_PAD_TOP: float  = 22.0
+const EYE_HOVER_PAD_BOT: float  = 4.0
 
 const CURSOR_ID: StringName = &"face_eyes"
 const CURSOR_PRIORITY: int  = 20
