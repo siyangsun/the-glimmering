@@ -4,7 +4,6 @@ const _WATER_TEX: Texture2D = preload("res://assets/textures/water1.png")
 
 const SKY_TOP:     Color = Color(0.78, 0.80, 0.82)
 const SKY_HORIZON: Color = Color(0.38, 0.41, 0.45)
-const HORIZON_Y_FRAC: float = 0.48
 
 # Tint applied to water texture — keeps the palette cohesive.
 const OCEAN_TINT:  Color = Color(0.75, 0.88, 1.00, 1.0)
@@ -94,7 +93,7 @@ func _draw() -> void:
 	var vw: float       = vp.size.x
 	var vh: float       = vp.size.y
 	var focal: float    = WavePhysics.focal_length(vh)
-	var horizon_px: float = vh * HORIZON_Y_FRAC
+	var horizon_px: float = vh * WavePhysics.HORIZON_Y_FRAC
 	var eye_y: float    = _eye_height()
 
 	var sky_pts := PackedVector2Array([
@@ -182,23 +181,17 @@ func _draw_wave(wave: Node, vw: float, vh: float, focal: float,
 	if dist < 0.1:
 		return
 
-	var t: float     = wave.t_progress()
+	var t: float     = wave.t_progress()   # cosmetics only: haze fade + foam timing
 	var eff_h: float = wave.eff_height()
 
 	var player_h: float = 1.0 if StaggerSystem.is_knocked_down else 2.0
 
-	# Ease-in³: grows slowly at distance, accelerates sharply near player.
-	var t_ease: float        = t * t * t
-	var ratio: float         = clamp(eff_h / player_h, 0.0, 1.0)
-	var display_ratio: float = clampf(ratio * 2.5, 0.0, 1.0)
-	var screen_top: float    = lerpf(horizon_px, horizon_px * (1.0 - display_ratio), t_ease)
-
-	var base_y: float     = WavePhysics.wave_base_y(t, eff_h)
-	var screen_bot: float = maxf(
-		WavePhysics.project_screen_y(base_y, dist, eye_y, horizon_px, focal),
-		horizon_px)
-	var bot_drop: float   = t_ease * ratio * (vh - horizon_px) * 0.25
-	screen_bot = minf(screen_bot + bot_drop, vh)
+	# Wave is a full-width wall on the waterline; both edges from one projection.
+	# eff_h - water_level == wave.wave_data.height (crest above still water).
+	var span: Vector2 = WavePhysics.wave_screen_span(
+		eff_h - GameManager.water_level(), dist, eye_y, horizon_px, focal, vh)
+	var screen_top: float = span.x
+	var screen_bot: float = span.y
 
 	if screen_top >= screen_bot:
 		return
@@ -222,11 +215,7 @@ func _draw_wave(wave: Node, vw: float, vh: float, focal: float,
 	var far_blend: float  = (1.0 - dist_fade) * WAVE_HORIZON_BLEND
 	var faded_dark: Color = WAVE_TINT.lerp(SKY_HORIZON, far_blend)
 	var faded_lite: Color = Color(1.0, 1.0, 1.0, 1.0).lerp(SKY_HORIZON, far_blend)
-	var wave_type: int = 0
-	if eff_h >= 0.9 * player_h:
-		wave_type = 2
-	elif eff_h >= 0.5 * player_h:
-		wave_type = 1
+	var wave_type: int = WavePhysics.wave_category(eff_h, player_h)
 	# Short: transparent crest → opaque dark base filling to screen bottom (darkening effect).
 	# Medium: dark crest → blue-grey base.
 	# Tall: dark crest → white foam base, with animated foam band on top.
@@ -293,4 +282,4 @@ func _draw_wave_foam(screen_top: float, screen_bot: float, vw: float,
 
 func _eye_height() -> float:
 	var cam_y: float = 0.85 if StaggerSystem.is_knocked_down else 1.7
-	return cam_y - GameManager.water_level()
+	return WavePhysics.eye_height_above_water(cam_y, GameManager.water_level())

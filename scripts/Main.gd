@@ -26,8 +26,9 @@ func _input(event: InputEvent) -> void:
 			Input.set_custom_mouse_cursor(tex, Input.CURSOR_ARROW, Vector2.ZERO)
 
 func _on_wave_hit_flash(wave_data: WaveData) -> void:
+	var eff_h: float = WavePhysics.effective_height(wave_data.height, GameManager.water_level())
 	var player_h: float = 1.0 if StaggerSystem.is_knocked_down else 2.0
-	if wave_data.height + GameManager.water_level() < 0.9 * player_h:
+	if WavePhysics.wave_category(eff_h, player_h) < 2:
 		return
 	if not _flash_rect:
 		return

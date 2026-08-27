@@ -67,6 +67,8 @@ Main.tscn                        ← root; owns game state machine
 - Scaled on X and Y by `wave_data.size` (0.0–1.0 → 0%–100% viewport fill)
 - Plays the animation, then hides; meanwhile physics knockback resolves separately
 - Visual and mechanical are driven by the same `WaveData` but execute independently
+- See `waves.md` for the projection-only wave model (how a wavefront becomes a
+  screen rectangle, and the short / medium / tall split)
 
 ---
 

@@ -83,7 +83,7 @@ func _water_drag() -> float:
 	return lerpf(1.0, SUBMERGED_SPEED / BASE_SPEED, depth_ratio)
 
 func _on_wave_hit(wave_data: WaveData) -> void:
-	var effective_height: float = wave_data.height + GameManager.water_level()
+	var effective_height: float = WavePhysics.effective_height(wave_data.height, GameManager.water_level())
 	var ratio: float = effective_height / _current_height()
 	var effective_force: float = wave_data.force * ratio
 	if Input.is_action_pressed(&"walk_forward"):
