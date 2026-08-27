@@ -58,3 +58,4 @@ func reset() -> void:
 	is_playing = true
 	_arrival_stinger_played = false
 	_arrival_timer = -1.0
+	SignalBus.game_reset.emit()

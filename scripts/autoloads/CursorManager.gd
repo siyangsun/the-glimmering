@@ -22,9 +22,10 @@ const _SPRITES: Dictionary = {
 	&"handclosed":  "res://assets/sprites/handclosed.png",
 	&"handclosed2": "res://assets/sprites/handclosed2.png",
 	&"reach":       "res://assets/sprites/twohands.png",
-	&"fists":       "res://assets/sprites/twofists.png",
-	&"fists2":      "res://assets/sprites/twofists2.png",
-	&"fists3":      "res://assets/sprites/twofists3.png",
+	&"fists":        "res://assets/sprites/twofists.png",
+	&"fists2":       "res://assets/sprites/twofists2.png",
+	&"fists3":       "res://assets/sprites/twofists3.png",
+	&"drownedhand":  "res://assets/sprites/drownedhand.png",
 }
 
 # cursor name -> hotspot in that sprite's own (unscaled) pixels
@@ -33,9 +34,10 @@ const _HOTSPOTS: Dictionary = {
 	&"handclosed":  Vector2(3, 3),
 	&"handclosed2": Vector2(3, 3),
 	&"reach":       Vector2(32, 3),
-	&"fists":       Vector2(32, 3),
-	&"fists2":      Vector2(32, 3),
-	&"fists3":      Vector2(32, 3),
+	&"fists":        Vector2(32, 3),
+	&"fists2":       Vector2(32, 3),
+	&"fists3":       Vector2(32, 3),
+	&"drownedhand":  Vector2(3, 3),
 }
 
 const SQUEEZE_DOWN_TIME: float = 0.09   # handclosed → handclosed2
@@ -47,6 +49,7 @@ var _sprite: Sprite2D
 var _active: StringName = &""
 var _squeeze_anim: bool = false
 var _squeeze_held: bool = false  # sitting at handclosed2, waiting for release
+var _drowned: bool = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -68,6 +71,22 @@ func _ready() -> void:
 	layer.add_child(_sprite)
 
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+	SignalBus.game_ended.connect(_on_game_ended)
+	SignalBus.game_reset.connect(_on_game_reset)
+	_apply()
+
+func _on_game_ended(ending: StringName) -> void:
+	if ending != &"drown":
+		return
+	_drowned = true
+	_squeeze_anim = false
+	_squeeze_held = false
+	_active = &""
+	_apply()
+
+func _on_game_reset() -> void:
+	_drowned = false
+	_active = &""
 	_apply()
 
 ## Register (or update) a cursor request under `id`. Higher priority wins.
@@ -90,7 +109,7 @@ func _input(event: InputEvent) -> void:
 		var mb := event as InputEventMouseButton
 		if mb.button_index != MOUSE_BUTTON_LEFT:
 			return
-		if mb.pressed and not _squeeze_anim and not _squeeze_held and _requests.is_empty():
+		if mb.pressed and not _squeeze_anim and not _squeeze_held and _requests.is_empty() and not _drowned:
 			_squeeze_down()
 		elif not mb.pressed and _squeeze_held:
 			_squeeze_up()
@@ -106,7 +125,7 @@ func _place(mouse_pos: Vector2) -> void:
 	_sprite.position = mouse_pos - hotspot * CURSOR_SCALE
 
 func _apply() -> void:
-	if _squeeze_anim or _squeeze_held:
+	if not _drowned and (_squeeze_anim or _squeeze_held):
 		return
 	var want: StringName = _resolve()
 	if want == _active:
@@ -137,6 +156,8 @@ func _squeeze_up() -> void:
 	_apply()
 
 func _resolve() -> StringName:
+	if _drowned:
+		return &"drownedhand"
 	var best: StringName = &""
 	var best_pri: int = -1
 	for id: StringName in _requests:
