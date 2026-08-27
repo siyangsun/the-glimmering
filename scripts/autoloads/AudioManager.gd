@@ -163,7 +163,7 @@ func _process(delta: float) -> void:
 	if drown > 0.5:
 		_was_high_drown = true
 	if _prev_drown >= 0.8 and drown < 0.8:
-		_play(_pick(_wetcoffin), gain_surreal + 5.0, true)
+		_play(_pick(_wetcoffin), gain_surreal + 10.0, true)
 	if _prev_drown >= 0.6 and drown < 0.6:
 		play_surreal_coffin()
 	if _prev_drown > 0.0 and drown == 0.0:
@@ -189,9 +189,9 @@ func play_ambience_gulls() -> void:      _play(_pick(_gulls), gain_ambience, tru
 func play_ambience_buoy() -> void:       _play(_BUOY_RINGS, gain_ambience, true)
 func play_ambience_droning() -> void:    _play(_DRONING, gain_ambience, true)
 
-func play_impairment_gurgle() -> void:   _play(_GURGLE, gain_impairment, true)
+func play_impairment_gurgle() -> void:   _play(_GURGLE, gain_impairment + 5.0, true)
 func play_impairment_plunged() -> void:  _play(_pick(_plunged), gain_impairment, true)
-func play_impairment_breath() -> void:   _play(_DEEP_BREATH, gain_impairment, true)
+func play_impairment_breath() -> void:   _play(_DEEP_BREATH, gain_impairment + 5.0, true)
 
 func play_surreal_coffin() -> void:      _play(_pick(_coffin), gain_surreal + 5.0, true)
 func play_surreal_somebody() -> void:    _play(_SOMEBODY, gain_surreal, true)

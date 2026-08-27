@@ -1,8 +1,16 @@
 extends Control
 
-## Bottom-right UI face. Each clickable region (eyes, nose) is described by a
-## Dictionary of config + mutable state. Generic helpers handle hover, hold-loop,
-## click animation, and release — adding a new region is just declaring its config.
+## Bottom-right UI face. Each clickable region is described by a config+state
+## Dictionary. Generic helpers handle hover, hold-loop, click animation, and
+## release — adding a new region is just declaring its config.
+##
+## Region config keys (set once):
+##   cursor_id, priority, hover_cursor, flip_h, click_frames, click_times,
+##   hold_frames, hold_frame_time, release_frame, release_time, action
+## Optional:
+##   particles  — CPUParticles2D to restart on click
+## State keys (mutated at runtime):
+##   region, over, anim, held, loop_running
 
 const FACE_SCALE: float = 6.0
 const EYE_SCALE: float  = 6.0
@@ -16,6 +24,10 @@ const EYE_HOVER_PAD_SIDE: float = 22.0
 const EYE_HOVER_PAD_TOP: float  = 22.0
 const EYE_HOVER_PAD_BOT: float  = 4.0
 const NOSE_HOVER_PAD: float     = 6.0
+const EAR_Y_CENTER: float       = 28.0  # face-local pixels
+const EAR_HOVER_W: float        = 28.0  # screen pixels
+const EAR_HOVER_H: float        = 50.0  # screen pixels
+const EAR_INSET: float          = 8.0   # overlap into face edge
 
 const _FACE_PX: Vector2 = Vector2(64.0, 64.0)
 const _EYE_PX: Vector2  = Vector2(20.0, 12.0)
@@ -33,11 +45,13 @@ var _nose_sprite: TextureRect
 
 var _eyes_shut: bool = false
 var _nose_particles: CPUParticles2D
+var _left_ear_particles: CPUParticles2D
+var _right_ear_particles: CPUParticles2D
 
-# Region dictionaries — config keys are fixed; state keys (region/over/anim/held/loop_running)
-# are mutated at runtime. Dictionaries are reference types so helpers modify them in-place.
 var _eyes_reg: Dictionary
 var _nose_reg: Dictionary
+var _left_ear_reg: Dictionary
+var _right_ear_reg: Dictionary
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -62,24 +76,15 @@ func _ready() -> void:
 	add_child(_eyewater_r)
 	add_child(_nose_sprite)
 
-	_nose_particles = CPUParticles2D.new()
-	_nose_particles.emitting            = false
-	_nose_particles.amount              = 10
-	_nose_particles.lifetime            = 0.45
-	_nose_particles.explosiveness       = 0.3
-	_nose_particles.randomness          = 0.6
-	_nose_particles.direction           = Vector2(0.0, 1.0)
-	_nose_particles.spread              = 50.0
-	_nose_particles.gravity             = Vector2(0.0, 140.0)
-	_nose_particles.initial_velocity_min = 55.0
-	_nose_particles.initial_velocity_max = 110.0
-	_nose_particles.scale_amount_min    = 2.0
-	_nose_particles.scale_amount_max    = 4.0
-	_nose_particles.color               = Color(0.72, 0.88, 1.0, 0.9)
+	_nose_particles = _make_particles(Vector2(0.0, 1.0), 50.0, 10)
+	_left_ear_particles  = _make_particles(Vector2(-1.0, 0.3), 35.0, 6)
+	_right_ear_particles = _make_particles(Vector2(1.0, 0.3), 35.0, 6)
 	add_child(_nose_particles)
+	add_child(_left_ear_particles)
+	add_child(_right_ear_particles)
 
 	_eyes_reg = {
-		"cursor_id": &"face_eyes", "priority": 20,
+		"cursor_id": &"face_eyes", "priority": 20, "flip_h": false,
 		"hover_cursor": &"reach",
 		"click_frames": [&"fists", &"fists2"],
 		"click_times":  [0.05, 0.09],
@@ -90,7 +95,7 @@ func _ready() -> void:
 		"region": Rect2(), "over": false, "anim": false, "held": false, "loop_running": false,
 	}
 	_nose_reg = {
-		"cursor_id": &"face_nose", "priority": 20,
+		"cursor_id": &"face_nose", "priority": 20, "flip_h": false,
 		"hover_cursor": &"reach",
 		"click_frames": [&"pinch", &"pinch2"],
 		"click_times":  [0.07, 0.10],
@@ -100,6 +105,32 @@ func _ready() -> void:
 		"action": &"blow_nose",
 		"region": Rect2(), "over": false, "anim": false, "held": false, "loop_running": false,
 	}
+	_left_ear_reg = {
+		"cursor_id": &"face_left_ear", "priority": 20, "flip_h": true,
+		"hover_cursor": &"smack",
+		"click_frames": [&"smack2"],
+		"click_times":  [0.08],
+		"hold_frames":  [&"smack2"],
+		"hold_frame_time": 0.5,
+		"release_frame": &"smack", "release_time": 0.0,
+		"action": &"clear_left_ear",
+		"particles": null,
+		"region": Rect2(), "over": false, "anim": false, "held": false, "loop_running": false,
+	}
+	_right_ear_reg = {
+		"cursor_id": &"face_right_ear", "priority": 20, "flip_h": false,
+		"hover_cursor": &"smack",
+		"click_frames": [&"smack2"],
+		"click_times":  [0.08],
+		"hold_frames":  [&"smack2"],
+		"hold_frame_time": 0.5,
+		"release_frame": &"smack", "release_time": 0.0,
+		"action": &"clear_right_ear",
+		"particles": null,
+		"region": Rect2(), "over": false, "anim": false, "held": false, "loop_running": false,
+	}
+	_left_ear_reg["particles"]  = _left_ear_particles
+	_right_ear_reg["particles"] = _right_ear_particles
 
 	get_viewport().size_changed.connect(_layout)
 	_layout()
@@ -111,6 +142,24 @@ func _make_sprite(tex: Texture2D, s: float) -> TextureRect:
 	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	tr.scale = Vector2(s, s)
 	return tr
+
+func _make_particles(dir: Vector2, spread: float, amount: int) -> CPUParticles2D:
+	var p := CPUParticles2D.new()
+	p.emitting              = false
+	p.one_shot              = true
+	p.amount                = amount
+	p.lifetime              = 0.45
+	p.explosiveness         = 0.5
+	p.randomness            = 0.6
+	p.direction             = dir
+	p.spread                = spread
+	p.gravity               = Vector2(0.0, 140.0)
+	p.initial_velocity_min  = 55.0
+	p.initial_velocity_max  = 110.0
+	p.scale_amount_min      = 2.0
+	p.scale_amount_max      = 4.0
+	p.color                 = Color(0.72, 0.88, 1.0, 0.9)
+	return p
 
 func _layout() -> void:
 	var origin: Vector2 = get_viewport_rect().size - _FACE_PX * FACE_SCALE - CORNER_MARGIN
@@ -124,12 +173,23 @@ func _layout() -> void:
 	var l: Rect2 = Rect2(_eye_l.position, _EYE_PX * EYE_SCALE)
 	var r: Rect2 = Rect2(_eye_r.position, _EYE_PX * EYE_SCALE)
 	_eyes_reg["region"] = l.merge(r).grow_individual(EYE_HOVER_PAD_SIDE, EYE_HOVER_PAD_TOP, EYE_HOVER_PAD_SIDE, EYE_HOVER_PAD_BOT)
-	_nose_reg["region"]       = Rect2(_nose_sprite.position, _NOSE_PX * NOSE_SCALE).grow(NOSE_HOVER_PAD)
-	_nose_particles.position  = _nose_sprite.position + Vector2(_NOSE_PX.x * NOSE_SCALE * 0.5, _NOSE_PX.y * NOSE_SCALE)
+	_nose_reg["region"] = Rect2(_nose_sprite.position, _NOSE_PX * NOSE_SCALE).grow(NOSE_HOVER_PAD)
+
+	_nose_particles.position = _nose_sprite.position + Vector2(_NOSE_PX.x * NOSE_SCALE * 0.5, _NOSE_PX.y * NOSE_SCALE)
+
+	var ear_y: float = origin.y + EAR_Y_CENTER * FACE_SCALE - EAR_HOVER_H * 0.5
+	var face_w: float = _FACE_PX.x * FACE_SCALE
+	_left_ear_reg["region"]  = Rect2(origin.x - EAR_HOVER_W + EAR_INSET, ear_y, EAR_HOVER_W, EAR_HOVER_H)
+	_right_ear_reg["region"] = Rect2(origin.x + face_w - EAR_INSET, ear_y, EAR_HOVER_W, EAR_HOVER_H)
+	_left_ear_particles.position  = Vector2(origin.x, ear_y + EAR_HOVER_H * 0.5)
+	_right_ear_particles.position = Vector2(origin.x + face_w, ear_y + EAR_HOVER_H * 0.5)
 
 	var mouse_pos: Vector2 = get_viewport().get_mouse_position()
-	_refresh_region(_eyes_reg, mouse_pos)
-	_refresh_region(_nose_reg, mouse_pos)
+	for reg: Dictionary in _all_regions():
+		_refresh_region(reg, mouse_pos)
+
+func _all_regions() -> Array[Dictionary]:
+	return [_eyes_reg, _nose_reg, _left_ear_reg, _right_ear_reg]
 
 func _process(_delta: float) -> void:
 	var wet: bool = ImpairmentSystem.eyes_value > 0.0
@@ -151,13 +211,13 @@ func _process(_delta: float) -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		var pos: Vector2 = (event as InputEventMouseMotion).position
-		_refresh_region(_eyes_reg, pos)
-		_refresh_region(_nose_reg, pos)
+		for reg: Dictionary in _all_regions():
+			_refresh_region(reg, pos)
 	elif event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		if mb.button_index != MOUSE_BUTTON_LEFT:
 			return
-		for reg: Dictionary in [_eyes_reg, _nose_reg]:
+		for reg: Dictionary in _all_regions():
 			if mb.pressed and reg["over"] and not reg["anim"] and GameManager.is_playing:
 				reg["held"] = true
 				_click_anim(reg)
@@ -172,11 +232,12 @@ func _refresh_region(reg: Dictionary, mouse_pos: Vector2) -> void:
 	if over == reg["over"]:
 		return
 	reg["over"] = over
+	var flip: bool = reg.get("flip_h", false)
 	if over:
 		if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 			_start_hold(reg)
 		else:
-			CursorManager.request(reg["cursor_id"], reg["hover_cursor"], reg["priority"])
+			CursorManager.request(reg["cursor_id"], reg["hover_cursor"], reg["priority"], flip)
 	else:
 		reg["held"] = false
 		CursorManager.release(reg["cursor_id"])
@@ -184,10 +245,13 @@ func _refresh_region(reg: Dictionary, mouse_pos: Vector2) -> void:
 func _click_anim(reg: Dictionary) -> void:
 	reg["anim"] = true
 	SignalBus.action_performed.emit(reg["action"])
+	if reg.has("particles") and reg["particles"] != null:
+		(reg["particles"] as CPUParticles2D).restart()
 	var frames: Array = reg["click_frames"]
 	var times: Array  = reg["click_times"]
+	var flip: bool = reg.get("flip_h", false)
 	for i: int in frames.size():
-		CursorManager.request(reg["cursor_id"], frames[i], reg["priority"])
+		CursorManager.request(reg["cursor_id"], frames[i], reg["priority"], flip)
 		await get_tree().create_timer(times[i]).timeout
 	reg["anim"] = false
 
@@ -197,7 +261,7 @@ func _click_anim(reg: Dictionary) -> void:
 			_start_hold(reg)
 		else:
 			reg["held"] = false
-			CursorManager.request(reg["cursor_id"], reg["hover_cursor"], reg["priority"])
+			CursorManager.request(reg["cursor_id"], reg["hover_cursor"], reg["priority"], flip)
 	else:
 		reg["held"] = false
 		CursorManager.release(reg["cursor_id"])
@@ -211,17 +275,19 @@ func _hold_loop(reg: Dictionary) -> void:
 		return
 	reg["loop_running"] = true
 	var frames: Array = reg["hold_frames"]
+	var flip: bool = reg.get("flip_h", false)
 	var i: int = 0
 	while reg["held"]:
-		CursorManager.request(reg["cursor_id"], frames[i % frames.size()], reg["priority"])
+		CursorManager.request(reg["cursor_id"], frames[i % frames.size()], reg["priority"], flip)
 		i += 1
 		await get_tree().create_timer(reg["hold_frame_time"]).timeout
 	reg["loop_running"] = false
 
 func _release_anim(reg: Dictionary) -> void:
-	CursorManager.request(reg["cursor_id"], reg["release_frame"], reg["priority"])
+	var flip: bool = reg.get("flip_h", false)
+	CursorManager.request(reg["cursor_id"], reg["release_frame"], reg["priority"], flip)
 	await get_tree().create_timer(reg["release_time"]).timeout
 	if reg["over"]:
-		CursorManager.request(reg["cursor_id"], reg["hover_cursor"], reg["priority"])
+		CursorManager.request(reg["cursor_id"], reg["hover_cursor"], reg["priority"], flip)
 	else:
 		CursorManager.release(reg["cursor_id"])

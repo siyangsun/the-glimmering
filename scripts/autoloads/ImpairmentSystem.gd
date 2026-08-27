@@ -64,6 +64,8 @@ func _on_action_performed(action: StringName) -> void:
 	match action:
 		&"wipe_eyes": eyes_value = 0.0
 		&"blow_nose":  _set_impairment(&"nose", false)
+		&"clear_left_ear":  _set_impairment(&"left_ear", false)
+		&"clear_right_ear": _set_impairment(&"right_ear", false)
 		&"clear_ears":
 			_set_impairment(&"left_ear", false)
 			_set_impairment(&"right_ear", false)

@@ -27,8 +27,11 @@ const _SPRITES: Dictionary = {
 	&"fists3":       "res://assets/sprites/twofists3.png",
 	&"pinch":        "res://assets/sprites/pinch.png",
 	&"pinch2":       "res://assets/sprites/pinch2.png",
+	&"smack":        "res://assets/sprites/smack.png",
+	&"smack2":       "res://assets/sprites/smack2.png",
 	&"drownedhand":  "res://assets/sprites/drownedhand.png",
 	&"drownedhand2": "res://assets/sprites/drownedhand2.png",
+	&"handend":      "res://assets/sprites/handend.png",
 }
 
 # cursor name -> hotspot in that sprite's own (unscaled) pixels
@@ -42,20 +45,25 @@ const _HOTSPOTS: Dictionary = {
 	&"fists3":       Vector2(32, 3),
 	&"pinch":        Vector2(3, 3),
 	&"pinch2":       Vector2(3, 3),
+	&"smack":        Vector2(4, 4),
+	&"smack2":       Vector2(4, 4),
 	&"drownedhand":  Vector2(3, 3),
 	&"drownedhand2": Vector2(3, 3),
+	&"handend":      Vector2(3, 3),
 }
 
 const SQUEEZE_DOWN_TIME: float = 0.09   # handclosed → handclosed2
 const SQUEEZE_RELEASE_TIME: float = 0.07  # handclosed2 → handclosed → hand
 
 var _textures: Dictionary = {}
-var _requests: Dictionary = {}   # id: StringName -> { cursor: StringName, priority: int }
+var _requests: Dictionary = {}   # id: StringName -> { cursor: StringName, priority: int, flip_h: bool }
 var _sprite: Sprite2D
 var _active: StringName = &""
+var _active_flip: bool = false
 var _squeeze_anim: bool = false
 var _squeeze_held: bool = false  # sitting at handclosed2, waiting for release
 var _drowned: bool = false
+var _arrived: bool = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -82,25 +90,27 @@ func _ready() -> void:
 	_apply()
 
 func _on_game_ended(ending: StringName) -> void:
-	if ending != &"drown":
-		return
-	_drowned = true
 	_squeeze_anim = false
 	_squeeze_held = false
+	if ending == &"drown":
+		_drowned = true
+	elif ending == &"arrival":
+		_arrived = true
 	_active = &""
 	_apply()
 
 func _on_game_reset() -> void:
 	_drowned = false
+	_arrived = false
 	_active = &""
 	_apply()
 
 ## Register (or update) a cursor request under `id`. Higher priority wins.
-func request(id: StringName, cursor: StringName, priority: int = 10) -> void:
+func request(id: StringName, cursor: StringName, priority: int = 10, flip_h: bool = false) -> void:
 	var existing: Dictionary = _requests.get(id, {})
-	if existing.get("cursor") == cursor and existing.get("priority") == priority:
+	if existing.get("cursor") == cursor and existing.get("priority") == priority and existing.get("flip_h") == flip_h:
 		return
-	_requests[id] = { "cursor": cursor, "priority": priority }
+	_requests[id] = { "cursor": cursor, "priority": priority, "flip_h": flip_h }
 	_apply()
 
 ## Drop the request registered under `id`.
@@ -115,7 +125,7 @@ func _input(event: InputEvent) -> void:
 		var mb := event as InputEventMouseButton
 		if mb.button_index != MOUSE_BUTTON_LEFT:
 			return
-		if _drowned:
+		if _drowned or _arrived:
 			_apply()
 		elif mb.pressed and not _squeeze_anim and not _squeeze_held and _requests.is_empty():
 			_squeeze_down()
@@ -130,15 +140,20 @@ func _process(_delta: float) -> void:
 
 func _place(mouse_pos: Vector2) -> void:
 	var hotspot: Vector2 = _HOTSPOTS.get(_active, Vector2.ZERO)
+	if _active_flip and _active in _textures:
+		hotspot.x = (_textures[_active] as Texture2D).get_width() - hotspot.x
 	_sprite.position = mouse_pos - hotspot * CURSOR_SCALE
 
 func _apply() -> void:
 	if not _drowned and (_squeeze_anim or _squeeze_held):
 		return
 	var want: StringName = _resolve()
-	if want == _active:
+	var want_flip: bool = _resolve_flip()
+	if want == _active and want_flip == _active_flip:
 		return
 	_active = want
+	_active_flip = want_flip
+	_sprite.flip_h = want_flip
 	_sprite.texture = _textures[want]
 
 func _squeeze_down() -> void:
@@ -166,6 +181,8 @@ func _squeeze_up() -> void:
 func _resolve() -> StringName:
 	if _drowned:
 		return &"drownedhand2" if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) else &"drownedhand"
+	if _arrived:
+		return &"handend" if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) else &"hand"
 	var best: StringName = &""
 	var best_pri: int = -1
 	for id: StringName in _requests:
@@ -176,3 +193,15 @@ func _resolve() -> StringName:
 	if best != &"":
 		return best
 	return &"handclosed" if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) else &"hand"
+
+func _resolve_flip() -> bool:
+	if _drowned:
+		return false
+	var best_pri: int = -1
+	var best_flip: bool = false
+	for id: StringName in _requests:
+		var r: Dictionary = _requests[id]
+		if r["priority"] > best_pri:
+			best_pri = r["priority"]
+			best_flip = r.get("flip_h", false)
+	return best_flip
