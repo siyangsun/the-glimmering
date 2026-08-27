@@ -32,6 +32,8 @@ Main.tscn                        ← root; owns game state machine
 | `ImpairmentSystem` | tracks eye/ear/nose state; emits `impairment_changed` |
 | `AudioManager` | ocean ambience, wave hits, breathing layer, muffling bus effect |
 | `SignalBus` | cross-system events (wave_hit, action_performed, game_ended) |
+| `StaggerSystem` | knockdown/stagger state from wave force; emits `knocked_down` / `stood_up` |
+| `CursorManager` | owns the mouse cursor — software cursor (OS pointer hidden, `Sprite2D` follows the mouse on a top `CanvasLayer`); `request(id, name, priority)` / `release(id)`, highest priority wins. Known gap: OS cursor invisible over title bar / off-window |
 
 ---
 

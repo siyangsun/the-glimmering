@@ -1,6 +1,7 @@
-[gd_scene load_steps=10 format=3 uid="uid://daaqu65lf8smc"]
+[gd_scene load_steps=11 format=3 uid="uid://daaqu65lf8smc"]
 
 [ext_resource type="Script" path="res://scripts/Main.gd" id="1_main0"]
+[ext_resource type="Script" path="res://scripts/ui/FaceWidget.gd" id="9_face0"]
 [ext_resource type="Script" path="res://scripts/PlayerController.gd" id="2_plyr0"]
 [ext_resource type="Script" path="res://scripts/WaveSpawner.gd" id="3_wavs0"]
 [ext_resource type="Script" path="res://scripts/ui/DevOverlay.gd" id="4_devo0"]
@@ -57,6 +58,15 @@ offset_left = 12.0
 offset_top = 12.0
 offset_right = 400.0
 offset_bottom = 80.0
+
+[node name="FaceWidget" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("9_face0")
 
 [node name="DebugLayer" type="CanvasLayer" parent="."]
 layer = 20

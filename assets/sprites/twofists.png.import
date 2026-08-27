@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bdcapld14rvdg"
-path="res://.godot/imported/handclosed.png-5a9804d15f35925a1fcb1aa4575b4a4d.ctex"
+uid="uid://dnqyhoxkdibbe"
+path="res://.godot/imported/twofists.png-2f579a7710eb9077cfe70bd927646d78.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/handclosed.png"
-dest_files=["res://.godot/imported/handclosed.png-5a9804d15f35925a1fcb1aa4575b4a4d.ctex"]
+source_file="res://assets/sprites/twofists.png"
+dest_files=["res://.godot/imported/twofists.png-2f579a7710eb9077cfe70bd927646d78.ctex"]
 
 [params]
 

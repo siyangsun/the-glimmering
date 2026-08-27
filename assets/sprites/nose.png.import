@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bdcapld14rvdg"
-path="res://.godot/imported/handclosed.png-5a9804d15f35925a1fcb1aa4575b4a4d.ctex"
+uid="uid://ctakrlx2wa0r5"
+path="res://.godot/imported/nose.png-673ea32a6bb10448e4c876c8f4df5237.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/handclosed.png"
-dest_files=["res://.godot/imported/handclosed.png-5a9804d15f35925a1fcb1aa4575b4a4d.ctex"]
+source_file="res://assets/sprites/nose.png"
+dest_files=["res://.godot/imported/nose.png-673ea32a6bb10448e4c876c8f4df5237.ctex"]
 
 [params]
 

@@ -6,24 +6,11 @@ func _ready() -> void:
 	_apply_font()
 	_build_world()
 	_build_vfx()
-	_setup_cursor()
 	SignalBus.game_ended.connect(_on_game_ended)
 	SignalBus.wave_hit.connect(_on_wave_hit_flash)
 
-var _cursor_open: Texture2D   = null
-var _cursor_closed: Texture2D = null
-
-func _setup_cursor() -> void:
-	_cursor_open   = load("res://assets/sprites/hand.png")
-	_cursor_closed = load("res://assets/sprites/handclosed.png")
-	Input.set_custom_mouse_cursor(_cursor_open, Input.CURSOR_ARROW, Vector2.ZERO)
-
-func _input(event: InputEvent) -> void:
-	if event is InputEventMouseButton:
-		var mb := event as InputEventMouseButton
-		if mb.button_index == MOUSE_BUTTON_LEFT:
-			var tex: Texture2D = _cursor_closed if mb.pressed else _cursor_open
-			Input.set_custom_mouse_cursor(tex, Input.CURSOR_ARROW, Vector2.ZERO)
+# The custom mouse cursor is owned entirely by the CursorManager autoload
+# (scripts/autoloads/CursorManager.gd); UI/FaceWidget drives it over the eyes.
 
 func _on_wave_hit_flash(wave_data: WaveData) -> void:
 	var eff_h: float = WavePhysics.effective_height(wave_data.height, GameManager.water_level())
