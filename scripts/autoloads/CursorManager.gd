@@ -28,6 +28,7 @@ const _SPRITES: Dictionary = {
 	&"pinch":        "res://assets/sprites/pinch.png",
 	&"pinch2":       "res://assets/sprites/pinch2.png",
 	&"drownedhand":  "res://assets/sprites/drownedhand.png",
+	&"drownedhand2": "res://assets/sprites/drownedhand2.png",
 }
 
 # cursor name -> hotspot in that sprite's own (unscaled) pixels
@@ -42,6 +43,7 @@ const _HOTSPOTS: Dictionary = {
 	&"pinch":        Vector2(3, 3),
 	&"pinch2":       Vector2(3, 3),
 	&"drownedhand":  Vector2(3, 3),
+	&"drownedhand2": Vector2(3, 3),
 }
 
 const SQUEEZE_DOWN_TIME: float = 0.09   # handclosed → handclosed2
@@ -113,7 +115,9 @@ func _input(event: InputEvent) -> void:
 		var mb := event as InputEventMouseButton
 		if mb.button_index != MOUSE_BUTTON_LEFT:
 			return
-		if mb.pressed and not _squeeze_anim and not _squeeze_held and _requests.is_empty() and not _drowned:
+		if _drowned:
+			_apply()
+		elif mb.pressed and not _squeeze_anim and not _squeeze_held and _requests.is_empty():
 			_squeeze_down()
 		elif not mb.pressed and _squeeze_held:
 			_squeeze_up()
@@ -161,7 +165,7 @@ func _squeeze_up() -> void:
 
 func _resolve() -> StringName:
 	if _drowned:
-		return &"drownedhand"
+		return &"drownedhand2" if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) else &"drownedhand"
 	var best: StringName = &""
 	var best_pri: int = -1
 	for id: StringName in _requests:
