@@ -14,8 +14,8 @@ const EYE_SCALE: float  = 6.0    # eyeopen/eyeshut.png are 20x12
 const NOSE_SCALE: float = 4.8    # nose.png is 28x24
 const CORNER_MARGIN: Vector2 = Vector2(28.0, 28.0)  # gap from the screen corner
 
-const EYE_L_CENTER: Vector2 = Vector2(19.0, 27.0)
-const EYE_R_CENTER: Vector2 = Vector2(45.0, 27.0)
+const EYE_L_CENTER: Vector2 = Vector2(19.0, 28.0)
+const EYE_R_CENTER: Vector2 = Vector2(45.0, 28.0)
 const NOSE_CENTER: Vector2  = Vector2(32.0, 35.0)
 const EYE_HOVER_PAD: float  = 14.0  # extra screen px around the eyes counting as hover
 
@@ -26,6 +26,9 @@ const CURSOR_PRIORITY: int  = 20
 const FIST_1_TIME: float = 0.05
 const FIST_2_TIME: float = 0.09
 const FIST_RELEASE_TIME: float = 0.07
+const FIST_HOLD_FRAME_TIME: float = 0.08
+
+const _FIST_LOOP: Array[StringName] = [&"fists", &"fists2", &"fists3", &"fists2"]
 
 const _FACE_PX: Vector2 = Vector2(64.0, 64.0)
 const _EYE_PX: Vector2  = Vector2(20.0, 12.0)
@@ -43,6 +46,7 @@ var _eye_region: Rect2 = Rect2()
 var _over: bool = false
 var _fist_anim: bool = false
 var _fist_held: bool = false  # LMB held while hovering, sitting on fists cursor
+var _fist_loop_running: bool = false
 var _eyes_shut: bool = false
 
 func _ready() -> void:
@@ -119,8 +123,7 @@ func _refresh_hover(mouse_pos: Vector2) -> void:
 	_over = over
 	if over:
 		if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-			_fist_held = true
-			CursorManager.request(CURSOR_ID, &"fists", CURSOR_PRIORITY)
+			_start_fist_hold()
 		else:
 			CursorManager.request(CURSOR_ID, &"reach", CURSOR_PRIORITY)
 	else:
@@ -139,14 +142,28 @@ func _punch() -> void:
 	_over = _eye_region.has_point(get_viewport().get_mouse_position())
 	if _over:
 		if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-			_fist_held = true
-			CursorManager.request(CURSOR_ID, &"fists", CURSOR_PRIORITY)
+			_start_fist_hold()
 		else:
 			_fist_held = false
 			CursorManager.request(CURSOR_ID, &"reach", CURSOR_PRIORITY)
 	else:
 		_fist_held = false
 		CursorManager.release(CURSOR_ID)
+
+func _start_fist_hold() -> void:
+	_fist_held = true
+	_fist_hold_loop()
+
+func _fist_hold_loop() -> void:
+	if _fist_loop_running:
+		return
+	_fist_loop_running = true
+	var i: int = 0
+	while _fist_held:
+		CursorManager.request(CURSOR_ID, _FIST_LOOP[i % _FIST_LOOP.size()], CURSOR_PRIORITY)
+		i += 1
+		await get_tree().create_timer(FIST_HOLD_FRAME_TIME).timeout
+	_fist_loop_running = false
 
 func _fist_release() -> void:
 	CursorManager.request(CURSOR_ID, &"fists2", CURSOR_PRIORITY)

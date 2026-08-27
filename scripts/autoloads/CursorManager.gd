@@ -24,6 +24,7 @@ const _SPRITES: Dictionary = {
 	&"reach":       "res://assets/sprites/twohands.png",
 	&"fists":       "res://assets/sprites/twofists.png",
 	&"fists2":      "res://assets/sprites/twofists2.png",
+	&"fists3":      "res://assets/sprites/twofists3.png",
 }
 
 # cursor name -> hotspot in that sprite's own (unscaled) pixels
@@ -34,6 +35,7 @@ const _HOTSPOTS: Dictionary = {
 	&"reach":       Vector2(32, 3),
 	&"fists":       Vector2(32, 3),
 	&"fists2":      Vector2(32, 3),
+	&"fists3":      Vector2(32, 3),
 }
 
 const SQUEEZE_DOWN_TIME: float = 0.09   # handclosed → handclosed2
