@@ -1,18 +1,13 @@
 extends Control
 
-## Bottom-right UI face: the mysteryman spiral with two eyes and a nose layered
-## on top. Hovering the eyes asks CursorManager for the reaching-hands cursor;
-## clicking them punches (twofists → twofists2 → twofists) and clears eye damage,
-## the same effect as the [Q] wipe_eyes shortcut.
-##
-## The cursor itself is owned by the CursorManager autoload — this node only
-## detects hover / clicks on the eyes and files a request under &"face_eyes".
+## Bottom-right UI face. Each clickable region (eyes, nose) is described by a
+## Dictionary of config + mutable state. Generic helpers handle hover, hold-loop,
+## click animation, and release — adding a new region is just declaring its config.
 
-# --- Layout knobs (face-local pixels are 0..64 across the mysteryman sprite) ---
-const FACE_SCALE: float = 6.0    # mysteryman.png is 64x64
-const EYE_SCALE: float  = 6.0    # eyeopen/eyeshut.png are 20x12
-const NOSE_SCALE: float = 4.8    # nose.png is 28x24
-const CORNER_MARGIN: Vector2 = Vector2(28.0, 28.0)  # gap from the screen corner
+const FACE_SCALE: float = 6.0
+const EYE_SCALE: float  = 6.0
+const NOSE_SCALE: float = 4.8
+const CORNER_MARGIN: Vector2 = Vector2(28.0, 28.0)
 
 const EYE_L_CENTER: Vector2 = Vector2(20.0, 28.0)
 const EYE_R_CENTER: Vector2 = Vector2(46.0, 28.0)
@@ -20,17 +15,7 @@ const NOSE_CENTER: Vector2  = Vector2(33.0, 35.0)
 const EYE_HOVER_PAD_SIDE: float = 22.0
 const EYE_HOVER_PAD_TOP: float  = 22.0
 const EYE_HOVER_PAD_BOT: float  = 4.0
-
-const CURSOR_ID: StringName = &"face_eyes"
-const CURSOR_PRIORITY: int  = 20
-
-# Punch animation: twofists (the single "frame") → twofists2 → rest on twofists.
-const FIST_1_TIME: float = 0.05
-const FIST_2_TIME: float = 0.09
-const FIST_RELEASE_TIME: float = 0.07
-const FIST_HOLD_FRAME_TIME: float = 0.08
-
-const _FIST_LOOP: Array[StringName] = [&"fists", &"fists2", &"fists3", &"fists2"]
+const NOSE_HOVER_PAD: float     = 6.0
 
 const _FACE_PX: Vector2 = Vector2(64.0, 64.0)
 const _EYE_PX: Vector2  = Vector2(20.0, 12.0)
@@ -44,14 +29,14 @@ var _eye_l: TextureRect
 var _eye_r: TextureRect
 var _eyewater_l: TextureRect
 var _eyewater_r: TextureRect
-var _nose: TextureRect
+var _nose_sprite: TextureRect
 
-var _eye_region: Rect2 = Rect2()
-var _over: bool = false
-var _fist_anim: bool = false
-var _fist_held: bool = false  # LMB held while hovering, sitting on fists cursor
-var _fist_loop_running: bool = false
 var _eyes_shut: bool = false
+
+# Region dictionaries — config keys are fixed; state keys (region/over/anim/held/loop_running)
+# are mutated at runtime. Dictionaries are reference types so helpers modify them in-place.
+var _eyes_reg: Dictionary
+var _nose_reg: Dictionary
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -60,22 +45,44 @@ func _ready() -> void:
 	_tex_eye_open = load("res://assets/sprites/eyeopen.png")
 	_tex_eye_shut = load("res://assets/sprites/eyeshut.png")
 
-	# Draw order: face, eyes, eyewater, nose on top.
 	var tex_eyewater: Texture2D = load("res://assets/sprites/eyewater.png")
-	_face       = _make_sprite(load("res://assets/sprites/mysteryman.png"), FACE_SCALE)
-	_eye_l      = _make_sprite(_tex_eye_open, EYE_SCALE)
+	_face        = _make_sprite(load("res://assets/sprites/mysteryman.png"), FACE_SCALE)
+	_eye_l       = _make_sprite(_tex_eye_open, EYE_SCALE)
 	_eye_l.flip_h = true
-	_eye_r      = _make_sprite(_tex_eye_open, EYE_SCALE)
-	_eyewater_l = _make_sprite(tex_eyewater, EYE_SCALE)
+	_eye_r       = _make_sprite(_tex_eye_open, EYE_SCALE)
+	_eyewater_l  = _make_sprite(tex_eyewater, EYE_SCALE)
 	_eyewater_l.flip_h = true
-	_eyewater_r = _make_sprite(tex_eyewater, EYE_SCALE)
-	_nose       = _make_sprite(load("res://assets/sprites/nose.png"), NOSE_SCALE)
+	_eyewater_r  = _make_sprite(tex_eyewater, EYE_SCALE)
+	_nose_sprite = _make_sprite(load("res://assets/sprites/nose.png"), NOSE_SCALE)
 	add_child(_face)
 	add_child(_eye_l)
 	add_child(_eye_r)
 	add_child(_eyewater_l)
 	add_child(_eyewater_r)
-	add_child(_nose)
+	add_child(_nose_sprite)
+
+	_eyes_reg = {
+		"cursor_id": &"face_eyes", "priority": 20,
+		"hover_cursor": &"reach",
+		"click_frames": [&"fists", &"fists2"],
+		"click_times":  [0.05, 0.09],
+		"hold_frames":  [&"fists", &"fists2", &"fists3", &"fists2"],
+		"hold_frame_time": 0.08,
+		"release_frame": &"fists2", "release_time": 0.07,
+		"action": &"wipe_eyes",
+		"region": Rect2(), "over": false, "anim": false, "held": false, "loop_running": false,
+	}
+	_nose_reg = {
+		"cursor_id": &"face_nose", "priority": 20,
+		"hover_cursor": &"reach",
+		"click_frames": [&"pinch", &"pinch2"],
+		"click_times":  [0.07, 0.10],
+		"hold_frames":  [&"pinch", &"pinch2"],
+		"hold_frame_time": 0.10,
+		"release_frame": &"pinch", "release_time": 0.07,
+		"action": &"blow_nose",
+		"region": Rect2(), "over": false, "anim": false, "held": false, "loop_running": false,
+	}
 
 	get_viewport().size_changed.connect(_layout)
 	_layout()
@@ -90,25 +97,28 @@ func _make_sprite(tex: Texture2D, s: float) -> TextureRect:
 
 func _layout() -> void:
 	var origin: Vector2 = get_viewport_rect().size - _FACE_PX * FACE_SCALE - CORNER_MARGIN
-	_face.position       = origin
-	_eye_l.position      = origin + EYE_L_CENTER * FACE_SCALE - _EYE_PX * EYE_SCALE * 0.5
-	_eye_r.position      = origin + EYE_R_CENTER * FACE_SCALE - _EYE_PX * EYE_SCALE * 0.5
-	_eyewater_l.position = _eye_l.position
-	_eyewater_r.position = _eye_r.position
-	_nose.position       = origin + NOSE_CENTER * FACE_SCALE - _NOSE_PX * NOSE_SCALE * 0.5
+	_face.position        = origin
+	_eye_l.position       = origin + EYE_L_CENTER * FACE_SCALE - _EYE_PX * EYE_SCALE * 0.5
+	_eye_r.position       = origin + EYE_R_CENTER * FACE_SCALE - _EYE_PX * EYE_SCALE * 0.5
+	_eyewater_l.position  = _eye_l.position
+	_eyewater_r.position  = _eye_r.position
+	_nose_sprite.position = origin + NOSE_CENTER * FACE_SCALE - _NOSE_PX * NOSE_SCALE * 0.5
 
 	var l: Rect2 = Rect2(_eye_l.position, _EYE_PX * EYE_SCALE)
 	var r: Rect2 = Rect2(_eye_r.position, _EYE_PX * EYE_SCALE)
-	_eye_region = l.merge(r).grow_individual(EYE_HOVER_PAD_SIDE, EYE_HOVER_PAD_TOP, EYE_HOVER_PAD_SIDE, EYE_HOVER_PAD_BOT)
-	_refresh_hover(get_viewport().get_mouse_position())
+	_eyes_reg["region"] = l.merge(r).grow_individual(EYE_HOVER_PAD_SIDE, EYE_HOVER_PAD_TOP, EYE_HOVER_PAD_SIDE, EYE_HOVER_PAD_BOT)
+	_nose_reg["region"] = Rect2(_nose_sprite.position, _NOSE_PX * NOSE_SCALE).grow(NOSE_HOVER_PAD)
 
-# eyes_value is a plain float with no change signal, so poll it — one comparison.
+	var mouse_pos: Vector2 = get_viewport().get_mouse_position()
+	_refresh_region(_eyes_reg, mouse_pos)
+	_refresh_region(_nose_reg, mouse_pos)
+
 func _process(_delta: float) -> void:
 	var wet: bool = ImpairmentSystem.eyes_value > 0.0
 	_eyewater_l.visible = wet
 	_eyewater_r.visible = wet
 
-	var shut: bool = _fist_held or ImpairmentSystem.eyes_value >= ImpairmentSystem.EYE_MAX
+	var shut: bool = _eyes_reg["held"] or ImpairmentSystem.eyes_value >= ImpairmentSystem.EYE_MAX
 	if shut == _eyes_shut:
 		return
 	_eyes_shut = shut
@@ -118,73 +128,78 @@ func _process(_delta: float) -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
-		_refresh_hover((event as InputEventMouseMotion).position)
+		var pos: Vector2 = (event as InputEventMouseMotion).position
+		_refresh_region(_eyes_reg, pos)
+		_refresh_region(_nose_reg, pos)
 	elif event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		if mb.button_index != MOUSE_BUTTON_LEFT:
 			return
-		if mb.pressed and _over and not _fist_anim and GameManager.is_playing:
-			_fist_held = true
-			_punch()
-		elif not mb.pressed and _fist_held and not _fist_anim:
-			_fist_held = false
-			_fist_release()
+		for reg: Dictionary in [_eyes_reg, _nose_reg]:
+			if mb.pressed and reg["over"] and not reg["anim"] and GameManager.is_playing:
+				reg["held"] = true
+				_click_anim(reg)
+			elif not mb.pressed and reg["held"] and not reg["anim"]:
+				reg["held"] = false
+				_release_anim(reg)
 
-func _refresh_hover(mouse_pos: Vector2) -> void:
-	if _fist_anim:
+func _refresh_region(reg: Dictionary, mouse_pos: Vector2) -> void:
+	if reg["anim"]:
 		return
-	var over: bool = _eye_region.has_point(mouse_pos)
-	if over == _over:
+	var over: bool = (reg["region"] as Rect2).has_point(mouse_pos)
+	if over == reg["over"]:
 		return
-	_over = over
+	reg["over"] = over
 	if over:
 		if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-			_start_fist_hold()
+			_start_hold(reg)
 		else:
-			CursorManager.request(CURSOR_ID, &"reach", CURSOR_PRIORITY)
+			CursorManager.request(reg["cursor_id"], reg["hover_cursor"], reg["priority"])
 	else:
-		_fist_held = false
-		CursorManager.release(CURSOR_ID)
+		reg["held"] = false
+		CursorManager.release(reg["cursor_id"])
 
-func _punch() -> void:
-	_fist_anim = true
-	SignalBus.action_performed.emit(&"wipe_eyes")
-	CursorManager.request(CURSOR_ID, &"fists", CURSOR_PRIORITY)
-	await get_tree().create_timer(FIST_1_TIME).timeout
-	CursorManager.request(CURSOR_ID, &"fists2", CURSOR_PRIORITY)
-	await get_tree().create_timer(FIST_2_TIME).timeout
-	_fist_anim = false
+func _click_anim(reg: Dictionary) -> void:
+	reg["anim"] = true
+	SignalBus.action_performed.emit(reg["action"])
+	var frames: Array = reg["click_frames"]
+	var times: Array  = reg["click_times"]
+	for i: int in frames.size():
+		CursorManager.request(reg["cursor_id"], frames[i], reg["priority"])
+		await get_tree().create_timer(times[i]).timeout
+	reg["anim"] = false
 
-	_over = _eye_region.has_point(get_viewport().get_mouse_position())
-	if _over:
+	reg["over"] = (reg["region"] as Rect2).has_point(get_viewport().get_mouse_position())
+	if reg["over"]:
 		if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-			_start_fist_hold()
+			_start_hold(reg)
 		else:
-			_fist_held = false
-			CursorManager.request(CURSOR_ID, &"reach", CURSOR_PRIORITY)
+			reg["held"] = false
+			CursorManager.request(reg["cursor_id"], reg["hover_cursor"], reg["priority"])
 	else:
-		_fist_held = false
-		CursorManager.release(CURSOR_ID)
+		reg["held"] = false
+		CursorManager.release(reg["cursor_id"])
 
-func _start_fist_hold() -> void:
-	_fist_held = true
-	_fist_hold_loop()
+func _start_hold(reg: Dictionary) -> void:
+	reg["held"] = true
+	_hold_loop(reg)
 
-func _fist_hold_loop() -> void:
-	if _fist_loop_running:
+func _hold_loop(reg: Dictionary) -> void:
+	if reg["loop_running"]:
 		return
-	_fist_loop_running = true
+	reg["loop_running"] = true
+	var frames: Array = reg["hold_frames"]
 	var i: int = 0
-	while _fist_held:
-		CursorManager.request(CURSOR_ID, _FIST_LOOP[i % _FIST_LOOP.size()], CURSOR_PRIORITY)
+	while reg["held"]:
+		CursorManager.request(reg["cursor_id"], frames[i % frames.size()], reg["priority"])
 		i += 1
-		await get_tree().create_timer(FIST_HOLD_FRAME_TIME).timeout
-	_fist_loop_running = false
+		await get_tree().create_timer(reg["hold_frame_time"]).timeout
+	reg["loop_running"] = false
 
-func _fist_release() -> void:
-	CursorManager.request(CURSOR_ID, &"fists2", CURSOR_PRIORITY)
-	await get_tree().create_timer(FIST_RELEASE_TIME).timeout
-	if _over:
-		CursorManager.request(CURSOR_ID, &"reach", CURSOR_PRIORITY)
+func _release_anim(reg: Dictionary) -> void:
+	CursorManager.request(reg["cursor_id"], reg["release_frame"], reg["priority"])
+	await get_tree().create_timer(reg["release_time"]).timeout
+	if reg["over"]:
+		CursorManager.request(reg["cursor_id"], reg["hover_cursor"], reg["priority"])
 	else:
-		CursorManager.release(CURSOR_ID)
+		CursorManager.release(reg["cursor_id"])

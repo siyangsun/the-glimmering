@@ -25,6 +25,8 @@ const _SPRITES: Dictionary = {
 	&"fists":        "res://assets/sprites/twofists.png",
 	&"fists2":       "res://assets/sprites/twofists2.png",
 	&"fists3":       "res://assets/sprites/twofists3.png",
+	&"pinch":        "res://assets/sprites/pinch.png",
+	&"pinch2":       "res://assets/sprites/pinch2.png",
 	&"drownedhand":  "res://assets/sprites/drownedhand.png",
 }
 
@@ -37,6 +39,8 @@ const _HOTSPOTS: Dictionary = {
 	&"fists":        Vector2(32, 3),
 	&"fists2":       Vector2(32, 3),
 	&"fists3":       Vector2(32, 3),
+	&"pinch":        Vector2(3, 3),
+	&"pinch2":       Vector2(3, 3),
 	&"drownedhand":  Vector2(3, 3),
 }
 
