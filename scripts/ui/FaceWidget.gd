@@ -17,7 +17,9 @@ const CORNER_MARGIN: Vector2 = Vector2(28.0, 28.0)  # gap from the screen corner
 const EYE_L_CENTER: Vector2 = Vector2(20.0, 28.0)
 const EYE_R_CENTER: Vector2 = Vector2(46.0, 28.0)
 const NOSE_CENTER: Vector2  = Vector2(33.0, 35.0)
-const EYE_HOVER_PAD: float  = 14.0  # extra screen px around the eyes counting as hover
+const EYE_HOVER_PAD_SIDE: float = 22.0
+const EYE_HOVER_PAD_TOP: float  = 14.0
+const EYE_HOVER_PAD_BOT: float  = 8.0
 
 const CURSOR_ID: StringName = &"face_eyes"
 const CURSOR_PRIORITY: int  = 20
@@ -87,7 +89,7 @@ func _layout() -> void:
 
 	var l: Rect2 = Rect2(_eye_l.position, _EYE_PX * EYE_SCALE)
 	var r: Rect2 = Rect2(_eye_r.position, _EYE_PX * EYE_SCALE)
-	_eye_region = l.merge(r).grow(EYE_HOVER_PAD)
+	_eye_region = l.merge(r).grow_individual(EYE_HOVER_PAD_SIDE, EYE_HOVER_PAD_TOP, EYE_HOVER_PAD_SIDE, EYE_HOVER_PAD_BOT)
 	_refresh_hover(get_viewport().get_mouse_position())
 
 # eyes_value is a plain float with no change signal, so poll it — one comparison.
