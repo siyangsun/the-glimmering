@@ -98,6 +98,8 @@ func _place(mouse_pos: Vector2) -> void:
 	_sprite.position = mouse_pos - hotspot * CURSOR_SCALE
 
 func _apply() -> void:
+	if _squeeze_anim:
+		return
 	var want: StringName = _resolve()
 	if want == _active:
 		return
