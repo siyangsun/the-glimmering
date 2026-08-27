@@ -41,7 +41,6 @@ var _nose: TextureRect
 var _eye_region: Rect2 = Rect2()
 var _over: bool = false
 var _fist_anim: bool = false
-var _rest_fists: bool = false   # after a punch, hold twofists until the pointer leaves
 var _eyes_shut: bool = false
 
 func _ready() -> void:
@@ -112,25 +111,22 @@ func _refresh_hover(mouse_pos: Vector2) -> void:
 		return
 	_over = over
 	if over:
-		CursorManager.request(CURSOR_ID, &"fists" if _rest_fists else &"reach", CURSOR_PRIORITY)
+		CursorManager.request(CURSOR_ID, &"reach", CURSOR_PRIORITY)
 	else:
-		_rest_fists = false
 		CursorManager.release(CURSOR_ID)
 
 func _punch() -> void:
 	_fist_anim = true
-	_rest_fists = false
 	SignalBus.action_performed.emit(&"wipe_eyes")
 	CursorManager.request(CURSOR_ID, &"fists", CURSOR_PRIORITY)
 	await get_tree().create_timer(FIST_1_TIME).timeout
 	CursorManager.request(CURSOR_ID, &"fists2", CURSOR_PRIORITY)
 	await get_tree().create_timer(FIST_2_TIME).timeout
-	CursorManager.request(CURSOR_ID, &"fists", CURSOR_PRIORITY)
 	_fist_anim = false
-	_rest_fists = true
 
 	# The pointer may have left the eyes during the animation.
 	_over = _eye_region.has_point(get_viewport().get_mouse_position())
-	if not _over:
-		_rest_fists = false
+	if _over:
+		CursorManager.request(CURSOR_ID, &"reach", CURSOR_PRIORITY)
+	else:
 		CursorManager.release(CURSOR_ID)

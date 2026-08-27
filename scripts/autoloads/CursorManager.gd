@@ -14,30 +14,35 @@ extends Node
 ## KNOWN LIMITATION: while the OS cursor is hidden it is also invisible over the
 ## window title bar and outside the window. To be handled later.
 
-const CURSOR_SCALE: float = 2.0  # the pixel-art sprites are small at native size
+const CURSOR_SCALE: float = 4.0  # the pixel-art sprites are small at native size
 
 # cursor name -> source sprite
 const _SPRITES: Dictionary = {
-	&"hand":       "res://assets/sprites/hand.png",
-	&"handclosed": "res://assets/sprites/handclosed.png",
-	&"reach":      "res://assets/sprites/twohands.png",
-	&"fists":      "res://assets/sprites/twofists.png",
-	&"fists2":     "res://assets/sprites/twofists2.png",
+	&"hand":        "res://assets/sprites/hand.png",
+	&"handclosed":  "res://assets/sprites/handclosed.png",
+	&"handclosed2": "res://assets/sprites/handclosed2.png",
+	&"reach":       "res://assets/sprites/twohands.png",
+	&"fists":       "res://assets/sprites/twofists.png",
+	&"fists2":      "res://assets/sprites/twofists2.png",
 }
 
 # cursor name -> hotspot in that sprite's own (unscaled) pixels
 const _HOTSPOTS: Dictionary = {
-	&"hand":       Vector2(3, 3),
-	&"handclosed": Vector2(3, 3),
-	&"reach":      Vector2(32, 3),
-	&"fists":      Vector2(32, 3),
-	&"fists2":     Vector2(32, 3),
+	&"hand":        Vector2(3, 3),
+	&"handclosed":  Vector2(3, 3),
+	&"handclosed2": Vector2(3, 3),
+	&"reach":       Vector2(32, 3),
+	&"fists":       Vector2(32, 3),
+	&"fists2":      Vector2(32, 3),
 }
+
+const SQUEEZE_2_TIME: float = 0.09  # how long handclosed2 is shown
 
 var _textures: Dictionary = {}
 var _requests: Dictionary = {}   # id: StringName -> { cursor: StringName, priority: int }
 var _sprite: Sprite2D
 var _active: StringName = &""
+var _squeeze_anim: bool = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -77,8 +82,12 @@ func release(id: StringName) -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		_place((event as InputEventMouseMotion).position)
-	elif event is InputEventMouseButton and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
-		_apply()  # hand <-> handclosed
+	elif event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed and not _squeeze_anim and _requests.is_empty():
+			_squeeze()
+		else:
+			_apply()  # hand <-> handclosed
 
 func _process(_delta: float) -> void:
 	_apply()
@@ -94,6 +103,17 @@ func _apply() -> void:
 		return
 	_active = want
 	_sprite.texture = _textures[want]
+
+func _squeeze() -> void:
+	_squeeze_anim = true
+	_active = &"handclosed"
+	_sprite.texture = _textures[&"handclosed"]
+	await get_tree().create_timer(SQUEEZE_2_TIME).timeout
+	_active = &"handclosed2"
+	_sprite.texture = _textures[&"handclosed2"]
+	await get_tree().create_timer(SQUEEZE_2_TIME).timeout
+	_squeeze_anim = false
+	_apply()
 
 func _resolve() -> StringName:
 	var best: StringName = &""
