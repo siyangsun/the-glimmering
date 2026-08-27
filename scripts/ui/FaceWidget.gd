@@ -25,6 +25,7 @@ const CURSOR_PRIORITY: int  = 20
 # Punch animation: twofists (the single "frame") → twofists2 → rest on twofists.
 const FIST_1_TIME: float = 0.05
 const FIST_2_TIME: float = 0.09
+const FIST_RELEASE_TIME: float = 0.07
 
 const _FACE_PX: Vector2 = Vector2(64.0, 64.0)
 const _EYE_PX: Vector2  = Vector2(20.0, 12.0)
@@ -41,6 +42,7 @@ var _nose: TextureRect
 var _eye_region: Rect2 = Rect2()
 var _over: bool = false
 var _fist_anim: bool = false
+var _fist_held: bool = false  # LMB held while hovering, sitting on fists cursor
 var _eyes_shut: bool = false
 
 func _ready() -> void:
@@ -99,9 +101,13 @@ func _input(event: InputEvent) -> void:
 		_refresh_hover((event as InputEventMouseMotion).position)
 	elif event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
-		if mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed \
-				and _over and not _fist_anim and GameManager.is_playing:
+		if mb.button_index != MOUSE_BUTTON_LEFT:
+			return
+		if mb.pressed and _over and not _fist_anim and GameManager.is_playing:
 			_punch()
+		elif not mb.pressed and _fist_held and not _fist_anim:
+			_fist_held = false
+			_fist_release()
 
 func _refresh_hover(mouse_pos: Vector2) -> void:
 	if _fist_anim:
@@ -111,8 +117,13 @@ func _refresh_hover(mouse_pos: Vector2) -> void:
 		return
 	_over = over
 	if over:
-		CursorManager.request(CURSOR_ID, &"reach", CURSOR_PRIORITY)
+		if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+			_fist_held = true
+			CursorManager.request(CURSOR_ID, &"fists", CURSOR_PRIORITY)
+		else:
+			CursorManager.request(CURSOR_ID, &"reach", CURSOR_PRIORITY)
 	else:
+		_fist_held = false
 		CursorManager.release(CURSOR_ID)
 
 func _punch() -> void:
@@ -124,8 +135,19 @@ func _punch() -> void:
 	await get_tree().create_timer(FIST_2_TIME).timeout
 	_fist_anim = false
 
-	# The pointer may have left the eyes during the animation.
 	_over = _eye_region.has_point(get_viewport().get_mouse_position())
+	if _over:
+		if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+			_fist_held = true
+			CursorManager.request(CURSOR_ID, &"fists", CURSOR_PRIORITY)
+		else:
+			CursorManager.request(CURSOR_ID, &"reach", CURSOR_PRIORITY)
+	else:
+		CursorManager.release(CURSOR_ID)
+
+func _fist_release() -> void:
+	CursorManager.request(CURSOR_ID, &"fists2", CURSOR_PRIORITY)
+	await get_tree().create_timer(FIST_RELEASE_TIME).timeout
 	if _over:
 		CursorManager.request(CURSOR_ID, &"reach", CURSOR_PRIORITY)
 	else:

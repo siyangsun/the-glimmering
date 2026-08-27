@@ -36,13 +36,15 @@ const _HOTSPOTS: Dictionary = {
 	&"fists2":      Vector2(32, 3),
 }
 
-const SQUEEZE_2_TIME: float = 0.09  # how long handclosed2 is shown
+const SQUEEZE_DOWN_TIME: float = 0.09   # handclosed → handclosed2
+const SQUEEZE_RELEASE_TIME: float = 0.07  # handclosed2 → handclosed → hand
 
 var _textures: Dictionary = {}
 var _requests: Dictionary = {}   # id: StringName -> { cursor: StringName, priority: int }
 var _sprite: Sprite2D
 var _active: StringName = &""
 var _squeeze_anim: bool = false
+var _squeeze_held: bool = false  # sitting at handclosed2, waiting for release
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -84,10 +86,14 @@ func _input(event: InputEvent) -> void:
 		_place((event as InputEventMouseMotion).position)
 	elif event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
-		if mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed and not _squeeze_anim and _requests.is_empty():
-			_squeeze()
-		else:
-			_apply()  # hand <-> handclosed
+		if mb.button_index != MOUSE_BUTTON_LEFT:
+			return
+		if mb.pressed and not _squeeze_anim and not _squeeze_held and _requests.is_empty():
+			_squeeze_down()
+		elif not mb.pressed and _squeeze_held:
+			_squeeze_up()
+		elif not _squeeze_anim and not _squeeze_held:
+			_apply()
 
 func _process(_delta: float) -> void:
 	_apply()
@@ -98,7 +104,7 @@ func _place(mouse_pos: Vector2) -> void:
 	_sprite.position = mouse_pos - hotspot * CURSOR_SCALE
 
 func _apply() -> void:
-	if _squeeze_anim:
+	if _squeeze_anim or _squeeze_held:
 		return
 	var want: StringName = _resolve()
 	if want == _active:
@@ -106,14 +112,25 @@ func _apply() -> void:
 	_active = want
 	_sprite.texture = _textures[want]
 
-func _squeeze() -> void:
+func _squeeze_down() -> void:
 	_squeeze_anim = true
 	_active = &"handclosed"
 	_sprite.texture = _textures[&"handclosed"]
-	await get_tree().create_timer(SQUEEZE_2_TIME).timeout
-	_active = &"handclosed2"
-	_sprite.texture = _textures[&"handclosed2"]
-	await get_tree().create_timer(SQUEEZE_2_TIME).timeout
+	await get_tree().create_timer(SQUEEZE_DOWN_TIME).timeout
+	_squeeze_anim = false
+	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and _requests.is_empty():
+		_squeeze_held = true
+		_active = &"handclosed2"
+		_sprite.texture = _textures[&"handclosed2"]
+	else:
+		_squeeze_up()
+
+func _squeeze_up() -> void:
+	_squeeze_held = false
+	_squeeze_anim = true
+	_active = &"handclosed"
+	_sprite.texture = _textures[&"handclosed"]
+	await get_tree().create_timer(SQUEEZE_RELEASE_TIME).timeout
 	_squeeze_anim = false
 	_apply()
 
