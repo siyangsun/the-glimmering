@@ -9,9 +9,9 @@ const EYE_SCALE: float  = 6.0
 const NOSE_SCALE: float = 4.8
 const CORNER_MARGIN: Vector2 = Vector2(28.0, 28.0)
 
-const EYE_L_CENTER: Vector2 = Vector2(20.0, 28.0)
-const EYE_R_CENTER: Vector2 = Vector2(46.0, 28.0)
-const NOSE_CENTER: Vector2  = Vector2(33.0, 37.0)
+const EYE_L_CENTER: Vector2 = Vector2(20.0, 30.0)
+const EYE_R_CENTER: Vector2 = Vector2(46.0, 30.0)
+const NOSE_CENTER: Vector2  = Vector2(33.0, 39.0)
 const EYE_HOVER_PAD_SIDE: float = 22.0
 const EYE_HOVER_PAD_TOP: float  = 22.0
 const EYE_HOVER_PAD_BOT: float  = 4.0
