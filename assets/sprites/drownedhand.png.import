@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dnqyhoxkdibbe"
-path="res://.godot/imported/twofists.png-2f579a7710eb9077cfe70bd927646d78.ctex"
+uid="uid://uvcqyep12m17"
+path="res://.godot/imported/drownedhand.png-c297976d14d87a8336e583bd0d1fba60.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/twofists.png"
-dest_files=["res://.godot/imported/twofists.png-2f579a7710eb9077cfe70bd927646d78.ctex"]
+source_file="res://assets/sprites/drownedhand.png"
+dest_files=["res://.godot/imported/drownedhand.png-c297976d14d87a8336e583bd0d1fba60.ctex"]
 
 [params]
 

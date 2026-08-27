@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dnqyhoxkdibbe"
-path="res://.godot/imported/twofists.png-2f579a7710eb9077cfe70bd927646d78.ctex"
+uid="uid://bh5g58rf6qnps"
+path="res://.godot/imported/handend.png-34d8e5437a84da631c054ce5ba925894.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/twofists.png"
-dest_files=["res://.godot/imported/twofists.png-2f579a7710eb9077cfe70bd927646d78.ctex"]
+source_file="res://assets/sprites/handend.png"
+dest_files=["res://.godot/imported/handend.png-34d8e5437a84da631c054ce5ba925894.ctex"]
 
 [params]
 

@@ -25,9 +25,9 @@ const EYE_HOVER_PAD_TOP: float  = 22.0
 const EYE_HOVER_PAD_BOT: float  = 4.0
 const NOSE_HOVER_PAD: float     = 6.0
 const EAR_Y_CENTER: float       = 28.0  # face-local pixels
-const EAR_HOVER_W: float        = 28.0  # screen pixels
+const EAR_HOVER_W: float        = 36.0  # screen pixels (outer_reach + inset)
 const EAR_HOVER_H: float        = 50.0  # screen pixels
-const EAR_INSET: float          = 8.0   # overlap into face edge
+const EAR_INSET: float          = 13.0  # overlap into face edge
 
 const _FACE_PX: Vector2 = Vector2(64.0, 64.0)
 const _EYE_PX: Vector2  = Vector2(20.0, 12.0)
@@ -181,8 +181,8 @@ func _layout() -> void:
 	var face_w: float = _FACE_PX.x * FACE_SCALE
 	_left_ear_reg["region"]  = Rect2(origin.x - EAR_HOVER_W + EAR_INSET, ear_y, EAR_HOVER_W, EAR_HOVER_H)
 	_right_ear_reg["region"] = Rect2(origin.x + face_w - EAR_INSET, ear_y, EAR_HOVER_W, EAR_HOVER_H)
-	_left_ear_particles.position  = Vector2(origin.x, ear_y + EAR_HOVER_H * 0.5)
-	_right_ear_particles.position = Vector2(origin.x + face_w, ear_y + EAR_HOVER_H * 0.5)
+	_left_ear_particles.position  = Vector2(origin.x, ear_y + EAR_HOVER_H * 0.5 + 10.0)
+	_right_ear_particles.position = Vector2(origin.x + face_w, ear_y + EAR_HOVER_H * 0.5 + 10.0)
 
 	var mouse_pos: Vector2 = get_viewport().get_mouse_position()
 	for reg: Dictionary in _all_regions():
@@ -196,6 +196,7 @@ func _process(_delta: float) -> void:
 	_eyewater_l.visible = wet
 	_eyewater_r.visible = wet
 
+	_nose_particles.amount = clampi(roundi(DrownMeter.value * 18.0), 2, 18)
 	_nose_particles.emitting = DrownMeter.value > 0.0
 	ImpairmentSystem.eyes_shielded = _eyes_reg["over"]
 	ImpairmentSystem.nose_shielded = _nose_reg["held"]
@@ -244,8 +245,13 @@ func _refresh_region(reg: Dictionary, mouse_pos: Vector2) -> void:
 
 func _click_anim(reg: Dictionary) -> void:
 	reg["anim"] = true
+	var fire_particles: bool = reg.has("particles") and reg["particles"] != null
+	if fire_particles:
+		match reg["action"]:
+			&"clear_left_ear":  fire_particles = ImpairmentSystem.left_ear_impaired
+			&"clear_right_ear": fire_particles = ImpairmentSystem.right_ear_impaired
 	SignalBus.action_performed.emit(reg["action"])
-	if reg.has("particles") and reg["particles"] != null:
+	if fire_particles:
 		(reg["particles"] as CPUParticles2D).restart()
 	var frames: Array = reg["click_frames"]
 	var times: Array  = reg["click_times"]

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dnqyhoxkdibbe"
-path="res://.godot/imported/twofists.png-2f579a7710eb9077cfe70bd927646d78.ctex"
+uid="uid://degmk4npu7jfw"
+path="res://.godot/imported/smack.png-af9d534806a000ff8122ea82d2372207.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/twofists.png"
-dest_files=["res://.godot/imported/twofists.png-2f579a7710eb9077cfe70bd927646d78.ctex"]
+source_file="res://assets/sprites/smack.png"
+dest_files=["res://.godot/imported/smack.png-af9d534806a000ff8122ea82d2372207.ctex"]
 
 [params]
 

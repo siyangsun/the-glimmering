@@ -31,14 +31,6 @@ func _process(delta: float) -> void:
 	if not GameManager.is_playing:
 		return
 
-	# Clearing actions (always available)
-	if Input.is_action_just_pressed(&"wipe_eyes"):
-		SignalBus.action_performed.emit(&"wipe_eyes")
-	if Input.is_action_just_pressed(&"blow_nose"):
-		SignalBus.action_performed.emit(&"blow_nose")
-	if Input.is_action_just_pressed(&"clear_ears"):
-		SignalBus.action_performed.emit(&"clear_ears")
-
 	if Input.is_key_pressed(KEY_SHIFT):
 		GameManager.advance(10.0 * delta)
 	elif StaggerSystem.is_knocked_down:
