@@ -9,6 +9,7 @@ const EYE_RECOVERY_RATE: float = 3.0  # points/s — only active when below thre
 const EYE_RECOVERY_MAX: float = 60.0  # stops auto-recovering at or above this value
 
 var eyes_value: float = 0.0
+var eyes_shielded: bool = false
 var eyes_impaired: bool:
 	get:
 		return eyes_value > 0.0
@@ -34,6 +35,7 @@ func get_speed_modifier() -> float:
 
 func reset() -> void:
 	eyes_value = 0.0
+	eyes_shielded = false
 	_set_impairment(&"left_ear", false)
 	_set_impairment(&"right_ear", false)
 	_set_impairment(&"nose", false)
@@ -44,7 +46,8 @@ func _on_wave_hit(wave_data: WaveData) -> void:
 	var effective_height: float = wave_data.height + GameManager.water_level()
 
 	if wave_data.height >= 0.5 * unsubmerged_h:
-		eyes_value = minf(eyes_value + wave_data.force * EYE_DAMAGE_PER_FORCE, EYE_MAX)
+		var eye_dmg: float = wave_data.force * EYE_DAMAGE_PER_FORCE * (0.2 if eyes_shielded else 1.0)
+		eyes_value = minf(eyes_value + eye_dmg, EYE_MAX)
 
 	if effective_height >= EAR_NOSE_THRESHOLD * player_h:
 		_set_impairment(&"nose", true)

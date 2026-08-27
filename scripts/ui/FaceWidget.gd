@@ -32,6 +32,7 @@ var _eyewater_r: TextureRect
 var _nose_sprite: TextureRect
 
 var _eyes_shut: bool = false
+var _nose_particles: CPUParticles2D
 
 # Region dictionaries — config keys are fixed; state keys (region/over/anim/held/loop_running)
 # are mutated at runtime. Dictionaries are reference types so helpers modify them in-place.
@@ -60,6 +61,22 @@ func _ready() -> void:
 	add_child(_eyewater_l)
 	add_child(_eyewater_r)
 	add_child(_nose_sprite)
+
+	_nose_particles = CPUParticles2D.new()
+	_nose_particles.emitting            = false
+	_nose_particles.amount              = 10
+	_nose_particles.lifetime            = 0.45
+	_nose_particles.explosiveness       = 0.3
+	_nose_particles.randomness          = 0.6
+	_nose_particles.direction           = Vector2(0.0, 1.0)
+	_nose_particles.spread              = 50.0
+	_nose_particles.gravity             = Vector2(0.0, 140.0)
+	_nose_particles.initial_velocity_min = 55.0
+	_nose_particles.initial_velocity_max = 110.0
+	_nose_particles.scale_amount_min    = 2.0
+	_nose_particles.scale_amount_max    = 4.0
+	_nose_particles.color               = Color(0.72, 0.88, 1.0, 0.9)
+	add_child(_nose_particles)
 
 	_eyes_reg = {
 		"cursor_id": &"face_eyes", "priority": 20,
@@ -107,7 +124,8 @@ func _layout() -> void:
 	var l: Rect2 = Rect2(_eye_l.position, _EYE_PX * EYE_SCALE)
 	var r: Rect2 = Rect2(_eye_r.position, _EYE_PX * EYE_SCALE)
 	_eyes_reg["region"] = l.merge(r).grow_individual(EYE_HOVER_PAD_SIDE, EYE_HOVER_PAD_TOP, EYE_HOVER_PAD_SIDE, EYE_HOVER_PAD_BOT)
-	_nose_reg["region"] = Rect2(_nose_sprite.position, _NOSE_PX * NOSE_SCALE).grow(NOSE_HOVER_PAD)
+	_nose_reg["region"]       = Rect2(_nose_sprite.position, _NOSE_PX * NOSE_SCALE).grow(NOSE_HOVER_PAD)
+	_nose_particles.position  = _nose_sprite.position + Vector2(_NOSE_PX.x * NOSE_SCALE * 0.5, _NOSE_PX.y * NOSE_SCALE)
 
 	var mouse_pos: Vector2 = get_viewport().get_mouse_position()
 	_refresh_region(_eyes_reg, mouse_pos)
@@ -118,7 +136,10 @@ func _process(_delta: float) -> void:
 	_eyewater_l.visible = wet
 	_eyewater_r.visible = wet
 
-	var shut: bool = _eyes_reg["held"] or ImpairmentSystem.eyes_value >= ImpairmentSystem.EYE_MAX
+	_nose_particles.emitting = _nose_reg["held"]
+	ImpairmentSystem.eyes_shielded = _eyes_reg["over"]
+
+	var shut: bool = _eyes_reg["held"] or _nose_reg["held"] or ImpairmentSystem.eyes_value >= ImpairmentSystem.EYE_MAX
 	if shut == _eyes_shut:
 		return
 	_eyes_shut = shut
