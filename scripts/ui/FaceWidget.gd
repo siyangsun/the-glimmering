@@ -88,7 +88,7 @@ func _layout() -> void:
 
 # eyes_value is a plain float with no change signal, so poll it — one comparison.
 func _process(_delta: float) -> void:
-	var shut: bool = ImpairmentSystem.eyes_value >= ImpairmentSystem.EYE_MAX
+	var shut: bool = _fist_held or ImpairmentSystem.eyes_value >= ImpairmentSystem.EYE_MAX
 	if shut == _eyes_shut:
 		return
 	_eyes_shut = shut
