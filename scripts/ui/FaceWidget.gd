@@ -104,6 +104,7 @@ func _input(event: InputEvent) -> void:
 		if mb.button_index != MOUSE_BUTTON_LEFT:
 			return
 		if mb.pressed and _over and not _fist_anim and GameManager.is_playing:
+			_fist_held = true
 			_punch()
 		elif not mb.pressed and _fist_held and not _fist_anim:
 			_fist_held = false
@@ -141,8 +142,10 @@ func _punch() -> void:
 			_fist_held = true
 			CursorManager.request(CURSOR_ID, &"fists", CURSOR_PRIORITY)
 		else:
+			_fist_held = false
 			CursorManager.request(CURSOR_ID, &"reach", CURSOR_PRIORITY)
 	else:
+		_fist_held = false
 		CursorManager.release(CURSOR_ID)
 
 func _fist_release() -> void:
