@@ -359,14 +359,23 @@ func _update_ear_filter() -> void:
 	var master: int = AudioServer.get_bus_index(&"Master")
 	var left: bool  = ImpairmentSystem.left_ear_impaired
 	var right: bool = ImpairmentSystem.right_ear_impaired
-	var any_ear: bool = left or right
-	AudioServer.set_bus_effect_enabled(master, _ear_lp_idx, any_ear)
-	var one_sided: bool = any_ear and (left != right)
-	AudioServer.set_bus_effect_enabled(master, _ear_pan_idx, one_sided)
-	if one_sided:
-		# Pan toward the clear ear so it appears to carry more of the signal.
-		var pan: float = 0.6 if left else -0.6
-		(AudioServer.get_bus_effect(master, _ear_pan_idx) as AudioEffectPanner).pan = pan
+	if left and right:
+		# Both clogged: muffle everything, stay centered.
+		AudioServer.set_bus_effect_enabled(master, _ear_lp_idx, true)
+		AudioServer.set_bus_effect_enabled(master, _ear_pan_idx, false)
+	elif left:
+		# Left clogged, right clear: clear ear hears fine, silence the clogged side.
+		AudioServer.set_bus_effect_enabled(master, _ear_lp_idx, false)
+		AudioServer.set_bus_effect_enabled(master, _ear_pan_idx, true)
+		(AudioServer.get_bus_effect(master, _ear_pan_idx) as AudioEffectPanner).pan = 1.0
+	elif right:
+		# Right clogged, left clear: clear ear hears fine, silence the clogged side.
+		AudioServer.set_bus_effect_enabled(master, _ear_lp_idx, false)
+		AudioServer.set_bus_effect_enabled(master, _ear_pan_idx, true)
+		(AudioServer.get_bus_effect(master, _ear_pan_idx) as AudioEffectPanner).pan = -1.0
+	else:
+		AudioServer.set_bus_effect_enabled(master, _ear_lp_idx, false)
+		AudioServer.set_bus_effect_enabled(master, _ear_pan_idx, false)
 
 func _pick(pool: Array[AudioStream]) -> AudioStream:
 	return pool[randi() % pool.size()]

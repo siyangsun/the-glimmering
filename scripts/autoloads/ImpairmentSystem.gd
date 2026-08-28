@@ -9,7 +9,7 @@ const EYE_MAX: float = 100.0
 const EYE_RECOVERY_RATE: float = 1.5  # points/s — only active when below threshold
 const EYE_RECOVERY_MAX: float = 60.0  # stops auto-recovering at or above this value
 
-const EYE_WIPE_RATE: float = 10.0  # points removed per frame while wiping
+const EYE_WIPE_RATE: float = 30.0  # points removed per second while wiping
 
 var eyes_value: float = 0.0
 var eyes_shielded: bool = false
@@ -33,7 +33,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if eyes_wiping and eyes_value > 0.0:
-		eyes_value = maxf(eyes_value - EYE_WIPE_RATE, 0.0)
+		eyes_value = maxf(eyes_value - EYE_WIPE_RATE * delta, 0.0)
 	elif eyes_value > 0.0 and eyes_value < EYE_RECOVERY_MAX:
 		eyes_value = maxf(eyes_value - EYE_RECOVERY_RATE * delta, 0.0)
 
