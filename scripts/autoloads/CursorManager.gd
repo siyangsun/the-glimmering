@@ -17,7 +17,7 @@ extends Node
 const CURSOR_SCALE: float = 4.0  # the pixel-art sprites are small at native size
 
 # Cursor gets tinted blue while goggles are worn, matching the screen filter.
-const GOGGLE_CURSOR_TINT: Color = Color(0.45, 0.65, 1.0)
+const GOGGLE_CURSOR_TINT: Color = Color(0.45, 0.74, 0.92)
 
 # cursor name -> source sprite
 const _SPRITES: Dictionary = {

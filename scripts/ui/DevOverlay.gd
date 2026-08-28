@@ -4,7 +4,7 @@ const FONT_SIZE_REF: float = 48.0   # target size at 1080p
 const HEIGHT_REF: float    = 1080.0
 
 # Matches the goggle screen filter / cursor tint.
-const GOGGLE_TINT: Color = Color(0.45, 0.65, 1.0)
+const GOGGLE_TINT: Color = Color(0.45, 0.74, 0.92)
 
 @onready var _label: Label = $Label
 

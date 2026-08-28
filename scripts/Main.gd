@@ -363,7 +363,7 @@ func _build_vfx() -> void:
 	goggle_layer.layer = 11
 	add_child(goggle_layer)
 	_goggle_tint = ColorRect.new()
-	_goggle_tint.color = Color(0.08, 0.42, 0.78, 0.5)
+	_goggle_tint.color = Color(0.08, 0.52, 0.70, 0.5)
 	_goggle_tint.anchor_right  = 1.0
 	_goggle_tint.anchor_bottom = 1.0
 	_goggle_tint.mouse_filter  = Control.MOUSE_FILTER_IGNORE
