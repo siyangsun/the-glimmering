@@ -199,6 +199,7 @@ func _process(_delta: float) -> void:
 	_nose_particles.amount = clampi(roundi(DrownMeter.value * 18.0), 2, 18)
 	_nose_particles.emitting = DrownMeter.value > 0.0
 	ImpairmentSystem.eyes_shielded = _eyes_reg["over"]
+	ImpairmentSystem.eyes_wiping   = _eyes_reg["held"]
 	ImpairmentSystem.nose_shielded = _nose_reg["held"]
 
 	var shut: bool = _eyes_reg["held"] or _nose_reg["held"] or ImpairmentSystem.eyes_value >= ImpairmentSystem.EYE_MAX

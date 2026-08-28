@@ -9,8 +9,11 @@ const EYE_MAX: float = 100.0
 const EYE_RECOVERY_RATE: float = 1.5  # points/s — only active when below threshold
 const EYE_RECOVERY_MAX: float = 60.0  # stops auto-recovering at or above this value
 
+const EYE_WIPE_RATE: float = 10.0  # points removed per frame while wiping
+
 var eyes_value: float = 0.0
 var eyes_shielded: bool = false
+var eyes_wiping: bool = false
 var nose_shielded: bool = false
 var eyes_impaired: bool:
 	get:
@@ -29,7 +32,9 @@ func _ready() -> void:
 	SignalBus.action_performed.connect(_on_action_performed)
 
 func _process(delta: float) -> void:
-	if eyes_value > 0.0 and eyes_value < EYE_RECOVERY_MAX:
+	if eyes_wiping and eyes_value > 0.0:
+		eyes_value = maxf(eyes_value - EYE_WIPE_RATE, 0.0)
+	elif eyes_value > 0.0 and eyes_value < EYE_RECOVERY_MAX:
 		eyes_value = maxf(eyes_value - EYE_RECOVERY_RATE * delta, 0.0)
 
 func get_speed_modifier() -> float:
@@ -38,6 +43,7 @@ func get_speed_modifier() -> float:
 func reset() -> void:
 	eyes_value = 0.0
 	eyes_shielded = false
+	eyes_wiping = false
 	nose_shielded = false
 	_set_impairment(&"left_ear", false)
 	_set_impairment(&"right_ear", false)
@@ -62,7 +68,7 @@ func _on_wave_hit(wave_data: WaveData) -> void:
 
 func _on_action_performed(action: StringName) -> void:
 	match action:
-		&"wipe_eyes": eyes_value = 0.0
+		&"wipe_eyes": pass  # drains gradually via eyes_wiping in _process
 		&"blow_nose":  _set_impairment(&"nose", false)
 		&"clear_left_ear":  _set_impairment(&"left_ear", false)
 		&"clear_right_ear": _set_impairment(&"right_ear", false)
