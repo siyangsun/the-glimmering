@@ -58,6 +58,7 @@ var _wetcoffin: Array[AudioStream]
 var _knocked_down: bool = false  # mirrored from SignalBus to avoid cross-autoload ref
 var _ambience_player: AudioStreamPlayer
 var _elegy_player: AudioStreamPlayer = null
+var _rub_eyes_player: AudioStreamPlayer = null
 
 # ── Wet footstep loop ────────────────────────────────────────────────────────
 var gain_wetwalking: float = -4.0
@@ -194,8 +195,30 @@ func play_ambience_gulls() -> void:      _play(_pick(_gulls), gain_ambience, tru
 func play_ambience_buoy() -> void:       _play(_BUOY_RINGS, gain_ambience, true)
 func play_ambience_droning() -> void:    _play(_DRONING, gain_ambience, true)
 
-# Rub eyes — fires when the player wipes their eyes.
-func play_rub_eyes() -> void:            _play(_RUB_EYES, gain_impairment, false)
+# Rub eyes — plays while the player wipes their eyes, fades out on release.
+func play_rub_eyes() -> void:
+	if _rub_eyes_player and is_instance_valid(_rub_eyes_player):
+		_rub_eyes_player.queue_free()
+	var p := AudioStreamPlayer.new()
+	p.stream = _RUB_EYES
+	p.volume_db = gain_impairment
+	p.finished.connect(func() -> void:
+		if _rub_eyes_player == p:
+			_rub_eyes_player = null
+		p.queue_free()
+	, CONNECT_ONE_SHOT)
+	_rub_eyes_player = p
+	add_child(p)
+	p.play()
+
+func fade_rub_eyes(duration: float) -> void:
+	if not _rub_eyes_player or not is_instance_valid(_rub_eyes_player):
+		return
+	var p: AudioStreamPlayer = _rub_eyes_player
+	_rub_eyes_player = null
+	var tween := create_tween()
+	tween.tween_property(p, "volume_db", -80.0, duration)
+	tween.tween_callback(p.queue_free)
 
 # Ear smack — fires when the player clears an ear. Wet variant if the ear was
 # clogged. Left ear plays as-is; right ear is imaged to the right side.

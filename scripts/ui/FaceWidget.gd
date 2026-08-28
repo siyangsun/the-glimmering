@@ -47,6 +47,7 @@ var _nose_sprite: TextureRect
 
 var _gogglesworn: TextureRect
 var _eyes_shut: bool = false
+var _eyes_wiping_prev: bool = false
 var _nose_particles: CPUParticles2D
 var _left_ear_particles: CPUParticles2D
 var _right_ear_particles: CPUParticles2D
@@ -209,6 +210,14 @@ func _process(_delta: float) -> void:
 	ImpairmentSystem.eyes_wiping   = _eyes_reg["held"]
 	ImpairmentSystem.nose_shielded = _nose_reg["held"]
 
+	# Rub-eyes sound: start when wiping begins, fade out when it stops.
+	var wiping: bool = _eyes_reg["held"]
+	if wiping and not _eyes_wiping_prev:
+		AudioManager.play_rub_eyes()
+	elif not wiping and _eyes_wiping_prev:
+		AudioManager.fade_rub_eyes(0.2)
+	_eyes_wiping_prev = wiping
+
 	var shut: bool = _eyes_reg["held"] or _nose_reg["held"] or ImpairmentSystem.eyes_value >= ImpairmentSystem.EYE_MAX
 	if shut == _eyes_shut:
 		return
@@ -258,9 +267,9 @@ func _click_anim(reg: Dictionary) -> void:
 		match reg["action"]:
 			&"clear_left_ear":  fire_particles = ImpairmentSystem.left_ear_impaired
 			&"clear_right_ear": fire_particles = ImpairmentSystem.right_ear_impaired
-	# Action sounds. Ear smack reads the wet state before action_performed clears it.
+	# Ear smack sound — read the wet state before action_performed clears it.
+	# (Rub-eyes is driven by the wiping state in _process so it can fade on release.)
 	match reg["action"]:
-		&"wipe_eyes":       AudioManager.play_rub_eyes()
 		&"clear_left_ear":  AudioManager.play_ear_smack(false, ImpairmentSystem.left_ear_impaired)
 		&"clear_right_ear": AudioManager.play_ear_smack(true, ImpairmentSystem.right_ear_impaired)
 	SignalBus.action_performed.emit(reg["action"])
