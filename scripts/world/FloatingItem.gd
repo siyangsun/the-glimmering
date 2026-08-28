@@ -62,6 +62,8 @@ func _process(delta: float) -> void:
 	var focal: float      = WavePhysics.focal_length(vp.y)
 	var horizon_px: float = vp.y * WavePhysics.HORIZON_Y_FRAC
 	var cam_y: float      = 0.85 if StaggerSystem.is_knocked_down else 1.7
+	if ItemManager.is_enabled(&"pocketstones"):
+		cam_y -= 0.2  # keep items on the same waterline WaveRenderer2D draws
 	var eye_y: float      = WavePhysics.eye_height_above_water(cam_y, GameManager.water_level())
 
 	var world_y: float = sin(_bob_phase) * BOB_AMP

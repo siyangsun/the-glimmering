@@ -7,6 +7,9 @@ const KNOCKED_SPEED_MULT: float = 0.20  # 80% speed reduction when down
 # Linear interpolation between BASE_SPEED and this value as depth increases.
 const SUBMERGED_SPEED: float = 0.22    # m/s
 
+# Pocket stones: heavier gait, but waves can't push you around.
+const STONES_SPEED_MULT: float = 0.7
+
 const STANDING_HEIGHT: float = 2.0
 const KNOCKED_HEIGHT: float = 1.0      # 50% of standing height
 
@@ -43,6 +46,8 @@ func _process(delta: float) -> void:
 	else:
 		if Input.is_action_pressed(&"walk_forward"):
 			var speed: float = BASE_SPEED * ImpairmentSystem.get_speed_modifier() * _water_drag()
+			if ItemManager.is_enabled(&"pocketstones"):
+				speed *= STONES_SPEED_MULT
 			GameManager.advance(speed * delta)
 
 	# Sync Z position to distance
@@ -75,6 +80,10 @@ func _water_drag() -> float:
 	return lerpf(1.0, SUBMERGED_SPEED / BASE_SPEED, depth_ratio)
 
 func _on_wave_hit(wave_data: WaveData) -> void:
+	# Pocket stones anchor you — the wave still soaks you (impairments apply
+	# elsewhere), but it can't knock you back or off your feet.
+	if ItemManager.is_enabled(&"pocketstones"):
+		return
 	var effective_height: float = WavePhysics.effective_height(wave_data.height, GameManager.water_level())
 	var ratio: float = effective_height / _current_height()
 	var effective_force: float = wave_data.force * ratio

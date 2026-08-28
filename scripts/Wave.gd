@@ -39,6 +39,12 @@ func dist_to_player() -> float:
 func t_progress() -> float:
 	return clamp((position.z - _spawn_z) / SPAWN_DISTANCE, 0.0, 1.0)
 
+# Seconds until the wave reaches the player and fires the hit. INF if stalled.
+func time_to_hit() -> float:
+	if _wave_speed <= 0.0:
+		return INF
+	return (dist_to_player() - HIT_DISTANCE) / _wave_speed
+
 # Total water wall height: wave crest above surface + ambient water depth.
 func eff_height() -> float:
 	return WavePhysics.effective_height(wave_data.height, GameManager.water_level())

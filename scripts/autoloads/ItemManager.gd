@@ -6,6 +6,17 @@ const CATALOG: Dictionary = {
 		"description": "keeps the water out of your eyes.",
 		"sprite": "res://assets/sprites/goggles.png",
 	},
+	&"pocketstones": {
+		"name": "pocket stones",
+		"description": "some rocks somebody must've thought were cool",
+		"sprite": "res://assets/sprites/pocketstones.png",
+		"always_available": true,  # in the lost and found from the start; never spawns
+	},
+	&"paperboat": {
+		"name": "paper boat",
+		"description": "something to walk beside.",
+		"sprite": "res://assets/sprites/paperboat.png",
+	},
 }
 
 const SAVE_PATH: String = "user://lost_and_found.json"
@@ -17,7 +28,9 @@ func _ready() -> void:
 	_load()
 
 func is_collected(id: StringName) -> bool:
-	return id in collected
+	# "always_available" items sit in the lost and found from the start and never
+	# wash ashore (is_collected == true keeps them out of pick_for_spawn).
+	return id in collected or CATALOG.get(id, {}).get("always_available", false)
 
 func is_enabled(id: StringName) -> bool:
 	return id in enabled
@@ -35,7 +48,6 @@ func set_enabled(id: StringName, state: bool) -> void:
 		enabled.erase(id)
 
 func pick_for_spawn() -> StringName:
-	# Prefer uncollected items; fall back to any catalog entry.
 	# Only spawn items not already in the lost and found. Items flagged
 	# "repeatable" in the catalog can still wash ashore after being collected.
 	var pool: Array[StringName] = []

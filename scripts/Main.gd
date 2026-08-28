@@ -5,6 +5,7 @@ extends Node
 const SPAWN_AHEAD: float = 14.0
 var _spawn_distances: Array[float] = []
 var _active_items: Array[Node] = []
+var _paper_boat: Node2D = null
 
 # ── Persistent UI ─────────────────────────────────────────────────────────────
 var _flash_rect: ColorRect = null
@@ -25,12 +26,25 @@ func _process(_delta: float) -> void:
 		return
 	_update_item_spawns()
 	_update_goggle_tint()
+	_update_paper_boat()
 
 # ── Goggle overlay ────────────────────────────────────────────────────────────
 
 func _update_goggle_tint() -> void:
 	if _goggle_tint:
 		_goggle_tint.visible = ItemManager.is_enabled(&"goggles")
+
+# ── Paper boat companion ───────────────────────────────────────────────────────
+
+func _update_paper_boat() -> void:
+	var want: bool = ItemManager.is_enabled(&"paperboat")
+	var have: bool = _paper_boat != null and is_instance_valid(_paper_boat)
+	if want and not have:
+		_paper_boat = load("res://scripts/world/PaperBoat.gd").new()
+		$RenderLayer.add_child(_paper_boat)
+	elif not want and have:
+		_paper_boat.queue_free()
+		_paper_boat = null
 
 # ── Item spawning ─────────────────────────────────────────────────────────────
 
@@ -76,6 +90,9 @@ func _clear_items() -> void:
 			item.queue_free()
 	_active_items.clear()
 	_spawn_distances.clear()
+	if _paper_boat != null and is_instance_valid(_paper_boat):
+		_paper_boat.queue_free()
+		_paper_boat = null
 
 # ── Menu ──────────────────────────────────────────────────────────────────────
 
