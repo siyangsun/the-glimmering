@@ -9,7 +9,7 @@ extends Node
 ##     CursorManager.release(&"face_eyes")
 ##
 ## The highest-priority active request wins. With no requests the cursor is
-## `hand`, or `handclosed` while the left mouse button is held.
+## `hand`, or `handend` while the left mouse button is held.
 ##
 ## KNOWN LIMITATION: while the OS cursor is hidden it is also invisible over the
 ## window title bar and outside the window. To be handled later.
@@ -52,18 +52,12 @@ const _HOTSPOTS: Dictionary = {
 	&"handend":      Vector2(3, 3),
 }
 
-const SQUEEZE_DOWN_TIME: float = 0.09   # handclosed → handclosed2
-const SQUEEZE_RELEASE_TIME: float = 0.07  # handclosed2 → handclosed → hand
-
 var _textures: Dictionary = {}
 var _requests: Dictionary = {}   # id: StringName -> { cursor: StringName, priority: int, flip_h: bool }
 var _sprite: Sprite2D
 var _active: StringName = &""
 var _active_flip: bool = false
-var _squeeze_anim: bool = false
-var _squeeze_held: bool = false  # sitting at handclosed2, waiting for release
 var _drowned: bool = false
-var _arrived: bool = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -90,18 +84,13 @@ func _ready() -> void:
 	_apply()
 
 func _on_game_ended(ending: StringName) -> void:
-	_squeeze_anim = false
-	_squeeze_held = false
 	if ending == &"drown":
 		_drowned = true
-	elif ending == &"arrival":
-		_arrived = true
 	_active = &""
 	_apply()
 
 func _on_game_reset() -> void:
 	_drowned = false
-	_arrived = false
 	_active = &""
 	_apply()
 
@@ -123,15 +112,7 @@ func _input(event: InputEvent) -> void:
 		_place((event as InputEventMouseMotion).position)
 	elif event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
-		if mb.button_index != MOUSE_BUTTON_LEFT:
-			return
-		if _drowned or _arrived:
-			_apply()
-		elif mb.pressed and not _squeeze_anim and not _squeeze_held and _requests.is_empty():
-			_squeeze_down()
-		elif not mb.pressed and _squeeze_held:
-			_squeeze_up()
-		elif not _squeeze_anim and not _squeeze_held:
+		if mb.button_index == MOUSE_BUTTON_LEFT:
 			_apply()
 
 func _process(_delta: float) -> void:
@@ -145,8 +126,6 @@ func _place(mouse_pos: Vector2) -> void:
 	_sprite.position = mouse_pos - hotspot * CURSOR_SCALE
 
 func _apply() -> void:
-	if not _drowned and (_squeeze_anim or _squeeze_held):
-		return
 	var want: StringName = _resolve()
 	var want_flip: bool = _resolve_flip()
 	if want == _active and want_flip == _active_flip:
@@ -156,33 +135,9 @@ func _apply() -> void:
 	_sprite.flip_h = want_flip
 	_sprite.texture = _textures[want]
 
-func _squeeze_down() -> void:
-	_squeeze_anim = true
-	_active = &"handclosed"
-	_sprite.texture = _textures[&"handclosed"]
-	await get_tree().create_timer(SQUEEZE_DOWN_TIME).timeout
-	_squeeze_anim = false
-	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and _requests.is_empty():
-		_squeeze_held = true
-		_active = &"handclosed2"
-		_sprite.texture = _textures[&"handclosed2"]
-	else:
-		_squeeze_up()
-
-func _squeeze_up() -> void:
-	_squeeze_held = false
-	_squeeze_anim = true
-	_active = &"handclosed"
-	_sprite.texture = _textures[&"handclosed"]
-	await get_tree().create_timer(SQUEEZE_RELEASE_TIME).timeout
-	_squeeze_anim = false
-	_apply()
-
 func _resolve() -> StringName:
 	if _drowned:
 		return &"drownedhand2" if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) else &"drownedhand"
-	if _arrived:
-		return &"handend" if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) else &"hand"
 	var best: StringName = &""
 	var best_pri: int = -1
 	for id: StringName in _requests:
@@ -192,7 +147,7 @@ func _resolve() -> StringName:
 			best = r["cursor"]
 	if best != &"":
 		return best
-	return &"handclosed" if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) else &"hand"
+	return &"handend" if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) else &"hand"
 
 func _resolve_flip() -> bool:
 	if _drowned:
