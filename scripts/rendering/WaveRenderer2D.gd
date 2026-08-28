@@ -49,6 +49,10 @@ const _SPLASH_COLOR: Color      = Color(0.96, 0.98, 1.00)
 
 var _splash_blobs: Array = []
 
+# SKY_HORIZON dimmed by the current distance-based darkening; the water haze and
+# wave far-fade blend toward this so the horizon has no brightness seam.
+var _horizon_col: Color = SKY_HORIZON
+
 func _ready() -> void:
 	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	SignalBus.wave_hit.connect(_on_wave_hit_splash)
@@ -100,11 +104,12 @@ func _draw() -> void:
 		Vector2(0.0, 0.0), Vector2(vw, 0.0),
 		Vector2(vw, horizon_px), Vector2(0.0, horizon_px),
 	])
-	# Sky dims by up to 30% as the player wades farther from shore.
+	# Sky dims by up to 30% as the player wades farther from shore. The water haze
+	# and wave far-fade share the darkened horizon (_horizon_col) to avoid a seam.
 	var sky_dark: float = 0.3 * clampf(GameManager.distance / GameManager.GOAL_DISTANCE, 0.0, 1.0)
 	var sky_top: Color = SKY_TOP.darkened(sky_dark)
-	var sky_hor: Color = SKY_HORIZON.darkened(sky_dark)
-	var sky_cols := PackedColorArray([sky_top, sky_top, sky_hor, sky_hor])
+	_horizon_col = SKY_HORIZON.darkened(sky_dark)
+	var sky_cols := PackedColorArray([sky_top, sky_top, _horizon_col, _horizon_col])
 	draw_polygon(sky_pts, sky_cols)
 	_draw_water_surface(vw, vh, horizon_px, eye_y)
 
@@ -172,8 +177,8 @@ func _draw_water_surface(vw: float, vh: float, horizon_px: float, eye_y: float) 
 		])
 		var h_top: float = (1.0 - t0) * (1.0 - t0) * OCEAN_HORIZON_BLEND
 		var h_bot: float = (1.0 - t1) * (1.0 - t1) * OCEAN_HORIZON_BLEND
-		var col_top: Color = OCEAN_TINT.lerp(SKY_HORIZON, h_top)
-		var col_bot: Color = OCEAN_TINT.lerp(SKY_HORIZON, h_bot)
+		var col_top: Color = OCEAN_TINT.lerp(_horizon_col, h_top)
+		var col_bot: Color = OCEAN_TINT.lerp(_horizon_col, h_bot)
 		var tint := PackedColorArray([col_top, col_top, col_bot, col_bot])
 		draw_polygon(points, tint, uvs, _WATER_TEX)
 
@@ -217,8 +222,8 @@ func _draw_wave(wave: Node, vw: float, vh: float, focal: float,
 
 	var dist_fade: float  = clampf(t / WAVE_FADE_DIST, 0.0, 1.0)
 	var far_blend: float  = (1.0 - dist_fade) * WAVE_HORIZON_BLEND
-	var faded_dark: Color = WAVE_TINT.lerp(SKY_HORIZON, far_blend)
-	var faded_lite: Color = Color(1.0, 1.0, 1.0, 1.0).lerp(SKY_HORIZON, far_blend)
+	var faded_dark: Color = WAVE_TINT.lerp(_horizon_col, far_blend)
+	var faded_lite: Color = Color(1.0, 1.0, 1.0, 1.0).lerp(_horizon_col, far_blend)
 	var wave_type: int = WavePhysics.wave_category(eff_h, player_h)
 	# Short: transparent crest → opaque dark base filling to screen bottom (darkening effect).
 	# Medium: dark crest → blue-grey base.
