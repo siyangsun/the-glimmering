@@ -17,6 +17,11 @@ const CATALOG: Dictionary = {
 		"description": "something to walk beside.",
 		"sprite": "res://assets/sprites/paperboat.png",
 	},
+	&"strangewig": {
+		"name": "strange wig",
+		"description": "found tangled in the tide. still a little wet.",
+		"sprite": "res://assets/sprites/strangewigfloat.png",
+	},
 }
 
 const SAVE_PATH: String = "user://lost_and_found.json"

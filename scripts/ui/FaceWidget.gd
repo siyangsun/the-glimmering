@@ -46,6 +46,7 @@ var _eyewater_r: TextureRect
 var _nose_sprite: TextureRect
 
 var _gogglesworn: TextureRect
+var _strangewig: TextureRect
 var _eyes_shut: bool = false
 var _eyes_wiping_prev: bool = false
 var _nose_particles: CPUParticles2D
@@ -81,6 +82,8 @@ func _ready() -> void:
 	add_child(_nose_sprite)
 	_gogglesworn = _make_sprite(load("res://assets/sprites/gogglesworn.png"), FACE_SCALE)
 	add_child(_gogglesworn)
+	_strangewig = _make_sprite(load("res://assets/sprites/strangewig.png"), FACE_SCALE)
+	add_child(_strangewig)
 
 	_nose_particles = _make_particles(Vector2(0.0, 1.0), 50.0, 10)
 	_left_ear_particles  = _make_particles(Vector2(-1.0, 0.3), 35.0, 6)
@@ -176,6 +179,7 @@ func _layout() -> void:
 	_eyewater_r.position  = _eye_r.position
 	_nose_sprite.position = origin + NOSE_CENTER * FACE_SCALE - _NOSE_PX * NOSE_SCALE * 0.5
 	_gogglesworn.position = origin + GOGGLES_OFFSET * FACE_SCALE
+	_strangewig.position = origin
 
 	var l: Rect2 = Rect2(_eye_l.position, _EYE_PX * EYE_SCALE)
 	var r: Rect2 = Rect2(_eye_r.position, _EYE_PX * EYE_SCALE)
@@ -203,6 +207,7 @@ func _process(_delta: float) -> void:
 	_eyewater_l.visible = wet
 	_eyewater_r.visible = wet
 	_gogglesworn.visible = ItemManager.is_enabled(&"goggles")
+	_strangewig.visible = ItemManager.is_enabled(&"strangewig")
 
 	_nose_particles.amount = clampi(roundi(DrownMeter.value * 18.0), 2, 18)
 	_nose_particles.emitting = DrownMeter.value > 0.0
