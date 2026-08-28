@@ -20,6 +20,8 @@ const CORNER_MARGIN: Vector2 = Vector2(28.0, 28.0)
 const EYE_L_CENTER: Vector2 = Vector2(20.0, 30.0)
 const EYE_R_CENTER: Vector2 = Vector2(46.0, 30.0)
 const NOSE_CENTER: Vector2  = Vector2(33.0, 39.0)
+# Nudge the worn-goggles overlay up so it sits over the eyes, not just below them.
+const GOGGLES_OFFSET: Vector2 = Vector2(0.0, -4.0)  # in face-texture pixels
 const EYE_HOVER_PAD_SIDE: float = 0.0
 const EYE_HOVER_PAD_TOP: float  = 2.0
 const EYE_HOVER_PAD_BOT: float  = -40.0
@@ -172,7 +174,7 @@ func _layout() -> void:
 	_eyewater_l.position  = _eye_l.position
 	_eyewater_r.position  = _eye_r.position
 	_nose_sprite.position = origin + NOSE_CENTER * FACE_SCALE - _NOSE_PX * NOSE_SCALE * 0.5
-	_gogglesworn.position = origin
+	_gogglesworn.position = origin + GOGGLES_OFFSET * FACE_SCALE
 
 	var l: Rect2 = Rect2(_eye_l.position, _EYE_PX * EYE_SCALE)
 	var r: Rect2 = Rect2(_eye_r.position, _EYE_PX * EYE_SCALE)

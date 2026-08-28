@@ -4,7 +4,7 @@ const CATALOG: Dictionary = {
 	&"goggles": {
 		"name": "goggles",
 		"description": "keeps the water out of your eyes.",
-		"sprite": "res://assets/sprites/items/goggles.png",
+		"sprite": "res://assets/sprites/goggles.png",
 	},
 }
 
@@ -36,13 +36,12 @@ func set_enabled(id: StringName, state: bool) -> void:
 
 func pick_for_spawn() -> StringName:
 	# Prefer uncollected items; fall back to any catalog entry.
-	var uncollected: Array[StringName] = []
+	# Only spawn items not already in the lost and found. Items flagged
+	# "repeatable" in the catalog can still wash ashore after being collected.
+	var pool: Array[StringName] = []
 	for id: StringName in CATALOG:
-		if not is_collected(id):
-			uncollected.append(id)
-	var pool: Array[StringName] = uncollected if not uncollected.is_empty() else []
-	for id: StringName in CATALOG:
-		pool.append(id)
+		if not is_collected(id) or CATALOG[id].get("repeatable", false):
+			pool.append(id)
 	if pool.is_empty():
 		return &""
 	return pool[randi() % pool.size()]

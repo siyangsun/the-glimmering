@@ -62,11 +62,12 @@ func _spawn_item_at(shore_dist: float) -> void:
 	var id: StringName = ItemManager.pick_for_spawn()
 	if id == &"":
 		return
-	var item: Node3D = load("res://scripts/world/FloatingItem.gd").new()
+	var item: Node2D = load("res://scripts/world/FloatingItem.gd").new()
 	item.set("item_id", id)
 	item.set("distance_from_shore", shore_dist)
-	item.position = Vector3(randf_range(-1.5, 1.5), 0.0, -shore_dist)
-	add_child(item)
+	item.set("lateral", randf_range(-1.5, 1.5))
+	# Draw on the ocean render layer, above WaveRenderer2D so it sits on the water.
+	$RenderLayer.add_child(item)
 	_active_items.append(item)
 
 func _clear_items() -> void:
@@ -245,10 +246,11 @@ func _build_laf_entry(id: StringName, font: Font, anchor_top: float) -> Control:
 	entry.offset_bottom =  30.0
 	entry.mouse_filter  = Control.MOUSE_FILTER_IGNORE
 
-	# Item sprite
+	# Item sprite — click to grab (equip); shows the handclosed grab cursor.
+	var icon: TextureRect = null
 	var tex_path: String = info["sprite"]
 	if ResourceLoader.exists(tex_path):
-		var icon := TextureRect.new()
+		icon = TextureRect.new()
 		icon.texture = load(tex_path)
 		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -290,6 +292,19 @@ func _build_laf_entry(id: StringName, font: Font, anchor_top: float) -> Control:
 	toggle.add_theme_font_override(&"font", font)
 	toggle.toggled.connect(func(on: bool) -> void: ItemManager.set_enabled(id, on))
 	entry.add_child(toggle)
+
+	# Click the sprite to equip it — plain default cursor (hand / handend), no grab.
+	if icon:
+		icon.mouse_filter = Control.MOUSE_FILTER_STOP
+		icon.gui_input.connect(func(event: InputEvent) -> void:
+			if not event is InputEventMouseButton:
+				return
+			var mb := event as InputEventMouseButton
+			if mb.button_index != MOUSE_BUTTON_LEFT or not mb.pressed:
+				return
+			var new_state: bool = not ItemManager.is_enabled(id)
+			ItemManager.set_enabled(id, new_state)
+			toggle.set_pressed_no_signal(new_state))
 
 	return entry
 
@@ -348,7 +363,7 @@ func _build_vfx() -> void:
 	goggle_layer.layer = 11
 	add_child(goggle_layer)
 	_goggle_tint = ColorRect.new()
-	_goggle_tint.color = Color(0.10, 0.55, 0.62, 0.22)
+	_goggle_tint.color = Color(0.08, 0.42, 0.78, 0.5)
 	_goggle_tint.anchor_right  = 1.0
 	_goggle_tint.anchor_bottom = 1.0
 	_goggle_tint.mouse_filter  = Control.MOUSE_FILTER_IGNORE

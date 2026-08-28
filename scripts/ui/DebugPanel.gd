@@ -173,9 +173,12 @@ func _spawn_item_debug(id: StringName) -> void:
 	var main: Node = get_tree().root.get_node_or_null("Main")
 	if not main:
 		return
+	var render_layer: Node = main.get_node_or_null("RenderLayer")
+	if not render_layer:
+		return
 	var dist: float = GameManager.distance + 5.0
-	var item: Node3D = load("res://scripts/world/FloatingItem.gd").new()
+	var item: Node2D = load("res://scripts/world/FloatingItem.gd").new()
 	item.set("item_id", id)
 	item.set("distance_from_shore", dist)
-	item.position = Vector3(0.0, 0.0, -(GameManager.distance + 5.0))
-	main.add_child(item)
+	item.set("lateral", randf_range(-1.5, 1.5))
+	render_layer.add_child(item)

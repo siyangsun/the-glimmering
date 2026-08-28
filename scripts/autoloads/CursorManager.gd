@@ -16,6 +16,9 @@ extends Node
 
 const CURSOR_SCALE: float = 4.0  # the pixel-art sprites are small at native size
 
+# Cursor gets tinted blue while goggles are worn, matching the screen filter.
+const GOGGLE_CURSOR_TINT: Color = Color(0.45, 0.65, 1.0)
+
 # cursor name -> source sprite
 const _SPRITES: Dictionary = {
 	&"hand":        "res://assets/sprites/hand.png",
@@ -118,6 +121,8 @@ func _input(event: InputEvent) -> void:
 func _process(_delta: float) -> void:
 	_apply()
 	_place(get_viewport().get_mouse_position())
+	var goggled: bool = GameManager.is_playing and ItemManager.is_enabled(&"goggles")
+	_sprite.modulate = GOGGLE_CURSOR_TINT if goggled else Color.WHITE
 
 func _place(mouse_pos: Vector2) -> void:
 	var hotspot: Vector2 = _HOTSPOTS.get(_active, Vector2.ZERO)
