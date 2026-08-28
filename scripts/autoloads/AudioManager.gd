@@ -25,6 +25,7 @@ const _DRONING:         AudioStream = preload("res://assets/audio/the droning be
 
 const _SMACKEAR:     AudioStream = preload("res://assets/audio/smackear.mp3")
 const _SMACKEAR_WET: AudioStream = preload("res://assets/audio/smackear wet.mp3")
+const _RUB_EYES:     AudioStream = preload("res://assets/audio/rub eyes.mp3")
 
 const _GURGLE:      AudioStream = preload("res://assets/audio/gurgle.mp3")
 const _GURGLING:    AudioStream = preload("res://assets/audio/gurgling.mp3")
@@ -34,6 +35,7 @@ const _PLUNGED_2:   AudioStream = preload("res://assets/audio/plunged2.mp3")
 
 const _COFFIN_1:        AudioStream = preload("res://assets/audio/coffin.mp3")
 const _COFFIN_2:        AudioStream = preload("res://assets/audio/coffin2.mp3")
+const _COFFIN_3:        AudioStream = preload("res://assets/audio/coffin3.mp3")
 const _WETCOFFIN_1:     AudioStream = preload("res://assets/audio/wetcoffin.mp3")
 const _WETCOFFIN_2:     AudioStream = preload("res://assets/audio/wetcoffin2.mp3")
 const _WETCOFFIN_3:     AudioStream = preload("res://assets/audio/wetcoffin3.mp3")
@@ -107,7 +109,7 @@ const _WAVE_MAX_INTENSITY: float = 1.5
 func _ready() -> void:
 	_gulls     = [_GULLS_1, _GULLS_2]
 	_plunged   = [_PLUNGED_1, _PLUNGED_2]
-	_coffin    = [_COFFIN_1, _COFFIN_2]
+	_coffin    = [_COFFIN_1, _COFFIN_2, _COFFIN_3]
 	_wetcoffin = [_WETCOFFIN_1, _WETCOFFIN_2, _WETCOFFIN_3]
 	SignalBus.wave_hit.connect(_on_wave_hit)
 	SignalBus.knocked_down.connect(func() -> void: _knocked_down = true)
@@ -191,6 +193,9 @@ func play_wave_hit(wave_data: WaveData) -> void:
 func play_ambience_gulls() -> void:      _play(_pick(_gulls), gain_ambience, true)
 func play_ambience_buoy() -> void:       _play(_BUOY_RINGS, gain_ambience, true)
 func play_ambience_droning() -> void:    _play(_DRONING, gain_ambience, true)
+
+# Rub eyes — fires when the player wipes their eyes.
+func play_rub_eyes() -> void:            _play(_RUB_EYES, gain_impairment, false)
 
 # Ear smack — fires when the player clears an ear. Wet variant if the ear was
 # clogged. Left ear plays as-is; right ear is imaged to the right side.
