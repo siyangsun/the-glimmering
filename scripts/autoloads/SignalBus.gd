@@ -7,3 +7,4 @@ signal game_ended(ending: StringName)
 signal game_reset
 signal knocked_down
 signal stood_up
+signal item_collected(id: StringName)

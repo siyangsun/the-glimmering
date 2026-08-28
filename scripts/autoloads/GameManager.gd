@@ -13,7 +13,7 @@ var _arrival_timer: float = -1.0
 
 func _ready() -> void:
 	SignalBus.game_ended.connect(_on_game_ended)
-	is_playing = true
+	is_playing = false
 
 func _process(delta: float) -> void:
 	if not is_playing:

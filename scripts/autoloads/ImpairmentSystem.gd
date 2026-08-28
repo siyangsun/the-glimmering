@@ -55,7 +55,8 @@ func _on_wave_hit(wave_data: WaveData) -> void:
 	var effective_height: float = wave_data.height + GameManager.water_level()
 
 	if wave_data.height >= 0.5 * unsubmerged_h:
-		var eye_dmg: float = wave_data.force * EYE_DAMAGE_PER_FORCE * (SHIELD_FACTOR if eyes_shielded else 1.0)
+		var goggle_factor: float = 0.1 if ItemManager.is_enabled(&"goggles") else 1.0
+		var eye_dmg: float = wave_data.force * EYE_DAMAGE_PER_FORCE * (SHIELD_FACTOR if eyes_shielded else 1.0) * goggle_factor
 		eyes_value = minf(eyes_value + eye_dmg, EYE_MAX)
 
 	if effective_height >= EAR_NOSE_THRESHOLD * player_h:
