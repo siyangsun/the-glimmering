@@ -258,6 +258,10 @@ func _click_anim(reg: Dictionary) -> void:
 		match reg["action"]:
 			&"clear_left_ear":  fire_particles = ImpairmentSystem.left_ear_impaired
 			&"clear_right_ear": fire_particles = ImpairmentSystem.right_ear_impaired
+	# Ear smack sound — read the wet state before action_performed clears it.
+	match reg["action"]:
+		&"clear_left_ear":  AudioManager.play_ear_smack(false, ImpairmentSystem.left_ear_impaired)
+		&"clear_right_ear": AudioManager.play_ear_smack(true, ImpairmentSystem.right_ear_impaired)
 	SignalBus.action_performed.emit(reg["action"])
 	if fire_particles:
 		(reg["particles"] as CPUParticles2D).restart()

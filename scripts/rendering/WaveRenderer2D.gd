@@ -100,7 +100,11 @@ func _draw() -> void:
 		Vector2(0.0, 0.0), Vector2(vw, 0.0),
 		Vector2(vw, horizon_px), Vector2(0.0, horizon_px),
 	])
-	var sky_cols := PackedColorArray([SKY_TOP, SKY_TOP, SKY_HORIZON, SKY_HORIZON])
+	# Sky dims by up to 30% as the player wades farther from shore.
+	var sky_dark: float = 0.3 * clampf(GameManager.distance / GameManager.GOAL_DISTANCE, 0.0, 1.0)
+	var sky_top: Color = SKY_TOP.darkened(sky_dark)
+	var sky_hor: Color = SKY_HORIZON.darkened(sky_dark)
+	var sky_cols := PackedColorArray([sky_top, sky_top, sky_hor, sky_hor])
 	draw_polygon(sky_pts, sky_cols)
 	_draw_water_surface(vw, vh, horizon_px, eye_y)
 

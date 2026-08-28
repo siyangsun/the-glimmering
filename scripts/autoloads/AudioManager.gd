@@ -23,6 +23,9 @@ const _LIGHTHOUSE_GONG: AudioStream = preload("res://assets/audio/lighthouse gon
 const _BUOY_RINGS:      AudioStream = preload("res://assets/audio/the buoy rings.mp3")
 const _DRONING:         AudioStream = preload("res://assets/audio/the droning begins.mp3")
 
+const _SMACKEAR:     AudioStream = preload("res://assets/audio/smackear.mp3")
+const _SMACKEAR_WET: AudioStream = preload("res://assets/audio/smackear wet.mp3")
+
 const _GURGLE:      AudioStream = preload("res://assets/audio/gurgle.mp3")
 const _GURGLING:    AudioStream = preload("res://assets/audio/gurgling.mp3")
 const _DEEP_BREATH: AudioStream = preload("res://assets/audio/deep breath.mp3")
@@ -188,6 +191,33 @@ func play_wave_hit(wave_data: WaveData) -> void:
 func play_ambience_gulls() -> void:      _play(_pick(_gulls), gain_ambience, true)
 func play_ambience_buoy() -> void:       _play(_BUOY_RINGS, gain_ambience, true)
 func play_ambience_droning() -> void:    _play(_DRONING, gain_ambience, true)
+
+# Ear smack — fires when the player clears an ear. Wet variant if the ear was
+# clogged. Left ear plays as-is; right ear is imaged to the right side.
+func play_ear_smack(is_right_ear: bool, was_wet: bool) -> void:
+	var stream: AudioStream = _SMACKEAR_WET if was_wet else _SMACKEAR
+	if not is_right_ear:
+		_play(stream, gain_impairment, false)
+		return
+	# Right ear: route through a temporary panned bus, freed when the sound ends.
+	var bus_name := StringName("EarSmack_%d" % [randi()])
+	AudioServer.add_bus()
+	var bus_idx: int = AudioServer.bus_count - 1
+	AudioServer.set_bus_name(bus_idx, bus_name)
+	AudioServer.set_bus_send(bus_idx, &"Master")
+	var pan := AudioEffectPanner.new()
+	pan.pan = 1.0
+	AudioServer.add_bus_effect(bus_idx, pan)
+	var player := AudioStreamPlayer.new()
+	player.stream = stream
+	player.volume_db = gain_impairment
+	player.bus = bus_name
+	player.finished.connect(func() -> void:
+		AudioServer.remove_bus(AudioServer.get_bus_index(bus_name))
+		player.queue_free()
+	)
+	add_child(player)
+	player.play()
 
 func play_impairment_gurgle() -> void:   _play(_GURGLE, gain_impairment + 5.0, true)
 func play_impairment_plunged() -> void:  _play(_pick(_plunged), gain_impairment, true)
