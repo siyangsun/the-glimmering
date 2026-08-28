@@ -3,6 +3,9 @@ extends Control
 const FONT_SIZE_REF: float = 48.0   # target size at 1080p
 const HEIGHT_REF: float    = 1080.0
 
+# Matches the goggle screen filter / cursor tint.
+const GOGGLE_TINT: Color = Color(0.45, 0.65, 1.0)
+
 @onready var _label: Label = $Label
 
 func _ready() -> void:
@@ -21,3 +24,5 @@ func _process(_delta: float) -> void:
 		"%d meters from shore%s\n\n"
 		+ "press W to walk"
 	) % [dist_rounded, knocked]
+	var goggled: bool = GameManager.is_playing and ItemManager.is_enabled(&"goggles")
+	_label.modulate = GOGGLE_TINT if goggled else Color.WHITE
