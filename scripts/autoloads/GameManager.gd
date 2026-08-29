@@ -4,6 +4,8 @@ const GOAL_DISTANCE: float = 100.0
 const WATER_LEVEL_MAX: float = 2.0  # metres deep at 100m from shore
 const KNOCKBACK_SCALE: float = 0.6
 const ARRIVAL_DELAY: float = 11.0   # seconds after crossing 100m before ending
+# Pocket stones drag you down: full depth is reached this near shore, then holds.
+const STONES_DEPTH_DISTANCE: float = 50.0
 
 var distance: float = 0.0
 var is_playing: bool = false
@@ -28,7 +30,8 @@ func _process(delta: float) -> void:
 			SignalBus.game_ended.emit(&"arrival")
 
 func water_level() -> float:
-	return minf((distance / GOAL_DISTANCE) * WATER_LEVEL_MAX, WATER_LEVEL_MAX)
+	var ramp: float = STONES_DEPTH_DISTANCE if ItemManager.is_enabled(&"pocketstones") else GOAL_DISTANCE
+	return minf((distance / ramp) * WATER_LEVEL_MAX, WATER_LEVEL_MAX)
 
 func unsubmerged_height() -> float:
 	var player_h: float = 1.0 if StaggerSystem.is_knocked_down else 2.0

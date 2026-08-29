@@ -3,7 +3,6 @@ extends Node
 const FILL_RATE: float = 0.030       # per second while nose is clogged
 const DRAIN_RATE: float = 0.050      # per second while nose is clear
 const WAVE_HIT_AMOUNT: float = 0.04  # burst per wave hit, scaled by wave size
-const STONES_FILL_RATE: float = 0.010  # per second while wearing pocket stones (never drains)
 
 var value: float = 0.0
 
@@ -19,11 +18,6 @@ func _process(delta: float) -> void:
 	var shield: float = ImpairmentSystem.SHIELD_FACTOR if ImpairmentSystem.nose_shielded else 1.0
 	if ImpairmentSystem.nose_impaired:
 		value = min(value + FILL_RATE * shield * delta, 1.0)
-		if value >= 1.0:
-			SignalBus.game_ended.emit(&"drown")
-	elif ItemManager.is_enabled(&"pocketstones"):
-		# Weighed down and low in the water: it seeps in and never fully drains.
-		value = min(value + STONES_FILL_RATE * delta, 1.0)
 		if value >= 1.0:
 			SignalBus.game_ended.emit(&"drown")
 	else:

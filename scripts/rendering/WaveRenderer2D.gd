@@ -291,6 +291,4 @@ func _draw_wave_foam(screen_top: float, screen_bot: float, vw: float,
 
 func _eye_height() -> float:
 	var cam_y: float = 0.85 if StaggerSystem.is_knocked_down else 1.7
-	if ItemManager.is_enabled(&"pocketstones"):
-		cam_y -= 0.2  # weighed down, sitting lower in the water
 	return WavePhysics.eye_height_above_water(cam_y, GameManager.water_level())
