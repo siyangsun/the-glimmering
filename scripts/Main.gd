@@ -353,6 +353,15 @@ func _on_wave_hit_flash(wave_data: WaveData) -> void:
 	tween.tween_property(_flash_rect, "color:a", 0.0, 0.45)
 
 func _build_vfx() -> void:
+	# Drowning tunnel vignette — just under the post-process shader (layer 8) so
+	# it's baked into the posterized world, above the ocean render.
+	var drown_layer := CanvasLayer.new()
+	drown_layer.layer = 7
+	add_child(drown_layer)
+	var drown_rect := ColorRect.new()
+	drown_rect.set_script(preload("res://scripts/ui/DrownVignette.gd"))
+	drown_layer.add_child(drown_rect)
+
 	var eye_layer := CanvasLayer.new()
 	eye_layer.layer = 10
 	add_child(eye_layer)
