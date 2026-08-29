@@ -127,7 +127,7 @@ func _clear_items() -> void:
 
 # ── Menu ──────────────────────────────────────────────────────────────────────
 
-func _show_menu(end_msg: String = "") -> void:
+func _show_menu(end_msg: String = "", epitaph: String = "") -> void:
 	if _menu_layer and is_instance_valid(_menu_layer):
 		_menu_layer.queue_free()
 
@@ -167,6 +167,25 @@ func _show_menu(end_msg: String = "") -> void:
 		end_label.add_theme_font_size_override(&"font_size", 26)
 		center.add_child(end_label)
 		top_offset = 0.48
+
+	if epitaph != "":
+		var ep_label := Label.new()
+		ep_label.text = epitaph
+		ep_label.anchor_left   = 0.5
+		ep_label.anchor_right  = 0.5
+		ep_label.anchor_top    = 0.40
+		ep_label.anchor_bottom = 0.40
+		ep_label.offset_left   = -360.0
+		ep_label.offset_right  =  360.0
+		ep_label.offset_top    = -30.0
+		ep_label.offset_bottom =  70.0
+		ep_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		ep_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		ep_label.add_theme_font_override(&"font", _palatino_italic())
+		ep_label.add_theme_font_size_override(&"font_size", 18)
+		ep_label.modulate = Color(0.82, 0.82, 0.82)
+		center.add_child(ep_label)
+		top_offset = 0.60
 
 	var btn_ocean := _make_menu_button("go to the ocean", font)
 	btn_ocean.anchor_top    = top_offset
@@ -362,9 +381,14 @@ func _on_game_ended(ending: StringName) -> void:
 	_clear_items()
 	await get_tree().create_timer(1.8).timeout
 	var msg: String = "you drowned." if ending == &"drown" else "you have arrived."
+	var epitaph: String = ""
 	if ending == &"drown":
+		if ItemManager.is_enabled(&"pocketstones"):
+			epitaph = "If anybody could have saved me it would have been you.\n- Virginia Woolf"
+		elif GameManager.distance > 80.0:
+			epitaph = "He was swimming in a sea of other people's expectations. Men had drowned in seas like that.\n― Robert Jordan"
 		AudioManager.play_elegy_loop()
-	_show_menu(msg)
+	_show_menu(msg, epitaph)
 
 func _on_game_reset() -> void:
 	pass  # item spawning is re-seeded in _on_go_to_ocean
@@ -464,6 +488,12 @@ func _set_font_recursive(node: Node, font: Font) -> void:
 func _palatino() -> SystemFont:
 	var font := SystemFont.new()
 	font.font_names = PackedStringArray(["Palatino Linotype"])
+	return font
+
+func _palatino_italic() -> SystemFont:
+	var font := SystemFont.new()
+	font.font_names = PackedStringArray(["Palatino Linotype"])
+	font.font_style = TextServer.FONT_ITALIC
 	return font
 
 func _build_world() -> void:
