@@ -34,8 +34,11 @@ vec2 splash_layer(vec2 uv, float density, float max_active,
 				vec2 center  = h * 0.4 + 0.3
 					+ vec2(sin(phase), cos(phase * 1.3 + 1.0)) * 0.035;
 
+				// Per-cell aspect: independent random x/y stretch with a wider
+				// vertical range, so some droplets read as narrow and tall.
+				vec2 sh = hash2(c + seed + vec2(5.2, 9.3));
 				vec2 off  = local + vec2(float(dx), float(dy)) - center;
-				off      /= vec2(0.5 + h.y * 0.7, 0.35 + h.x * 0.5);
+				off      /= vec2(0.5 + sh.x * 0.4, 0.45 + sh.y * 0.65);
 				float dist = length(off);
 
 				float blob = (1.0 - smoothstep(blob_r * blur_inner, blob_r, dist)) * cell_alpha;
