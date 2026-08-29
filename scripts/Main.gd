@@ -353,6 +353,15 @@ func _on_wave_hit_flash(wave_data: WaveData) -> void:
 	tween.tween_property(_flash_rect, "color:a", 0.0, 0.45)
 
 func _build_vfx() -> void:
+	# Rainstick rain — above the ocean, below the post-process shader so the
+	# streaks get posterized into the world look. Toggles itself on the item.
+	var rain_layer := CanvasLayer.new()
+	rain_layer.layer = 6
+	add_child(rain_layer)
+	var rain := CPUParticles2D.new()
+	rain.set_script(preload("res://scripts/ui/RainEffect.gd"))
+	rain_layer.add_child(rain)
+
 	# Drowning tunnel vignette — above the post-process shader (layer 8) and the
 	# other overlays, so it's a crisp tunnel laid over the finished image.
 	var drown_layer := CanvasLayer.new()
