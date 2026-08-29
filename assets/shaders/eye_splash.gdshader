@@ -50,12 +50,12 @@ void fragment() {
 		float blur_inner = mix(0.55, 0.05, wet_amount);
 
 		// Layer 1: large sparse blobs — appear early.
-		float s1 = splash_layer(uv, 4.5, 0.55, 0.05, 0.22, vec2(0.00, 0.00), blur_inner);
+		float s1 = splash_layer(uv, 5.5, 0.72, 0.05, 0.22, vec2(0.00, 0.00), blur_inner);
 		// Layer 2: medium blobs — phase in after ~10% damage.
-		float s2 = splash_layer(uv, 7.0, 0.40, 0.09, 0.17, vec2(4.13, 7.29), blur_inner)
+		float s2 = splash_layer(uv, 8.5, 0.58, 0.09, 0.17, vec2(4.13, 7.29), blur_inner)
 		           * smoothstep(0.08, 0.25, wet_amount);
 		// Layer 3: small droplets — phase in after ~35% damage.
-		float s3 = splash_layer(uv, 11.0, 0.28, 0.13, 0.12, vec2(1.87, 3.64), blur_inner)
+		float s3 = splash_layer(uv, 13.0, 0.45, 0.13, 0.12, vec2(1.87, 3.64), blur_inner)
 		           * smoothstep(0.32, 0.55, wet_amount);
 
 		float mask = clamp(s1 + s2 * 0.85 + s3 * 0.70, 0.0, 1.0);

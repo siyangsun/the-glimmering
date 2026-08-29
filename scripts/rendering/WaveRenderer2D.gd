@@ -66,7 +66,7 @@ func _on_wave_hit_splash(wave_data: WaveData) -> void:
 	var vh: float  = vp.size.y
 	# norm_strength: 0 at the minimum threshold, 1 at 2× unsubmerged height.
 	var norm: float = clampf((wave_data.height - 0.5 * unsubmerged_h) / (1.5 * unsubmerged_h), 0.0, 1.0)
-	var n: int = int(randf_range(2.0, 5.0) + norm * 7.0)
+	var n: int = int(randf_range(5.0, 10.0) + norm * 14.0)
 	for i in range(n):
 		var speed: float  = randf_range(200.0, 450.0) + norm * 500.0
 		var spread: float = randf_range(-0.55, 0.55)

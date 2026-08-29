@@ -1,6 +1,6 @@
 extends ColorRect
 
-const _WOBBLE_START: float = 0.30  # eyes_value fraction where wobble begins
+const _WOBBLE_START: float = 0.50  # eyes_value fraction where wobble begins
 
 func _ready() -> void:
 	color = Color.TRANSPARENT
