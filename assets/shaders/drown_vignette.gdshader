@@ -22,7 +22,7 @@ void fragment() {
 	// Tunnel radius shrinks toward the centre as intensity rises.
 	float radius  = mix(0.95, 0.14, intensity);
 	float wob_amp = mix(0.04, 0.16, intensity);
-	float edge    = mix(0.40, 0.14, intensity);
+	float edge    = mix(0.55, 0.34, intensity);
 	radius += wob * wob_amp;
 
 	// 0 in the clear centre → 1 at the dark rim.
