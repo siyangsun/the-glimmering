@@ -381,14 +381,9 @@ func _on_game_ended(ending: StringName) -> void:
 	_clear_items()
 	await get_tree().create_timer(1.8).timeout
 	var msg: String = "you drowned." if ending == &"drown" else "you have arrived."
-	var epitaph: String = ""
 	if ending == &"drown":
-		if ItemManager.is_enabled(&"pocketstones"):
-			epitaph = "If anybody could have saved me it would have been you.\n- Virginia Woolf"
-		elif GameManager.distance > 80.0:
-			epitaph = "He was swimming in a sea of other people's expectations. Men had drowned in seas like that.\n― Robert Jordan"
 		AudioManager.play_elegy_loop()
-	_show_menu(msg, epitaph)
+	_show_menu(msg, Endings.epitaph_for(ending))
 
 func _on_game_reset() -> void:
 	pass  # item spawning is re-seeded in _on_go_to_ocean
@@ -493,7 +488,7 @@ func _palatino() -> SystemFont:
 func _palatino_italic() -> SystemFont:
 	var font := SystemFont.new()
 	font.font_names = PackedStringArray(["Palatino Linotype"])
-	font.font_style = TextServer.FONT_ITALIC
+	font.font_italic = true
 	return font
 
 func _build_world() -> void:
