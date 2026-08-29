@@ -4,7 +4,8 @@ const EAR_SPEED_MODIFIER: float = 0.55
 const SHIELD_FACTOR: float = 0.2  # damage multiplier when eye/nose is shielded (shared by DrownMeter)
 
 const EAR_NOSE_THRESHOLD: float = 0.90
-const EYE_DAMAGE_PER_FORCE: float = 12.0
+const EYE_DAMAGE_PER_FORCE: float = 18.0
+const EYE_TALL_BONUS: float = 1.0  # extra eye damage scaling with wave height / player height
 const EYE_MAX: float = 100.0
 const EYE_RECOVERY_RATE: float = 1.5  # points/s — only active when below threshold
 const EYE_RECOVERY_MAX: float = 60.0  # stops auto-recovering at or above this value
@@ -56,7 +57,9 @@ func _on_wave_hit(wave_data: WaveData) -> void:
 
 	if wave_data.height >= 0.5 * unsubmerged_h:
 		var goggle_factor: float = 0.1 if ItemManager.is_enabled(&"goggles") else 1.0
-		var eye_dmg: float = wave_data.force * EYE_DAMAGE_PER_FORCE * (SHIELD_FACTOR if eyes_shielded else 1.0) * goggle_factor
+		# Taller waves splash more into the eyes.
+		var tall_mult: float = 1.0 + EYE_TALL_BONUS * clampf(effective_height / player_h, 0.0, 1.0)
+		var eye_dmg: float = wave_data.force * EYE_DAMAGE_PER_FORCE * tall_mult * (SHIELD_FACTOR if eyes_shielded else 1.0) * goggle_factor
 		eyes_value = minf(eyes_value + eye_dmg, EYE_MAX)
 
 	if effective_height >= EAR_NOSE_THRESHOLD * player_h:
