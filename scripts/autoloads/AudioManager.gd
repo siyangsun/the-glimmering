@@ -78,10 +78,15 @@ const _GURGLING_FADE_RATE: float = 20.0  # dB per second
 var _gurgling_player: AudioStreamPlayer
 var _gurgling_vol: float = -80.0
 
-# Ear clog — low-pass filter + panner on Master bus.
+# Ear clog — low-pass + panner live on a dedicated "World" bus that all world
+# audio routes through. The plunge gets its own bus so it can localise to the
+# *clogged* ear rather than being routed to the clear one like everything else.
 const _EAR_LP_CUTOFF: float = 400.0
+const _WORLD_BUS: StringName  = &"World"
+const _PLUNGE_BUS: StringName = &"EarPlunge"
 var _ear_lp_idx: int = -1
 var _ear_pan_idx: int = -1
+var _plunge_pan_idx: int = -1
 
 # ── Wave crash behind — ambient timer near shore ────────────────────────────
 const _CRASH_MAX_DIST: float      = 15.0
@@ -130,6 +135,7 @@ func _start_gurgling() -> void:
 	_gurgling_player = AudioStreamPlayer.new()
 	_gurgling_player.stream = _GURGLING
 	_gurgling_player.volume_db = -80.0
+	_gurgling_player.bus = _WORLD_BUS
 	add_child(_gurgling_player)
 	_gurgling_player.play()
 
@@ -138,6 +144,7 @@ func _start_wetwalking() -> void:
 	_wetwalking_player = AudioStreamPlayer.new()
 	_wetwalking_player.stream = _WETWALKING
 	_wetwalking_player.volume_db = -80.0
+	_wetwalking_player.bus = _WORLD_BUS
 	add_child(_wetwalking_player)
 	_wetwalking_player.play()
 
@@ -146,6 +153,7 @@ func _start_waves_ambience() -> void:
 	_ambience_player = AudioStreamPlayer.new()
 	_ambience_player.stream = _WAVES_AMBIENCE
 	_ambience_player.volume_db = gain_ambience
+	_ambience_player.bus = _WORLD_BUS
 	add_child(_ambience_player)
 	_ambience_player.play()
 
@@ -206,6 +214,7 @@ func play_rub_eyes() -> void:
 	var p := AudioStreamPlayer.new()
 	p.stream = _RUB_EYES
 	p.volume_db = gain_impairment
+	p.bus = _WORLD_BUS
 	p.finished.connect(func() -> void:
 		if _rub_eyes_player == p:
 			_rub_eyes_player = null
@@ -236,7 +245,7 @@ func play_ear_smack(is_right_ear: bool, was_wet: bool) -> void:
 	AudioServer.add_bus()
 	var bus_idx: int = AudioServer.bus_count - 1
 	AudioServer.set_bus_name(bus_idx, bus_name)
-	AudioServer.set_bus_send(bus_idx, &"Master")
+	AudioServer.set_bus_send(bus_idx, _WORLD_BUS)
 	var pan := AudioEffectPanner.new()
 	pan.pan = 1.0
 	AudioServer.add_bus_effect(bus_idx, pan)
@@ -271,6 +280,7 @@ func play_elegy_loop() -> void:
 	_elegy_player = AudioStreamPlayer.new()
 	_elegy_player.stream = _ELEGY
 	_elegy_player.volume_db = gain_surreal
+	_elegy_player.bus = _WORLD_BUS
 	add_child(_elegy_player)
 	_elegy_player.play()
 
@@ -321,6 +331,7 @@ func _try_crash_behind() -> void:
 func _play(stream: AudioStream, base_db: float, vary: bool) -> void:
 	var player := AudioStreamPlayer.new()
 	player.stream = stream
+	player.bus = _WORLD_BUS
 	var variation_db: float = 0.0
 	if vary:
 		variation_db = linear_to_db(1.0 - randf() * _VARIATION_MAX)
@@ -361,6 +372,7 @@ func _play_ambient_stinger() -> void:
 	var player := AudioStreamPlayer.new()
 	player.stream = stream
 	player.volume_db = volume_db
+	player.bus = _WORLD_BUS
 
 	if randf() < _LP_CHANCE:
 		# Spin up a temporary bus with a low-pass effect so the filter is
@@ -369,7 +381,7 @@ func _play_ambient_stinger() -> void:
 		AudioServer.add_bus()
 		var bus_idx: int = AudioServer.bus_count - 1
 		AudioServer.set_bus_name(bus_idx, bus_name)
-		AudioServer.set_bus_send(bus_idx, &"Master")
+		AudioServer.set_bus_send(bus_idx, _WORLD_BUS)
 		var lp := AudioEffectLowPassFilter.new()
 		lp.cutoff_hz = randf_range(_LP_FREQ_MIN, _LP_FREQ_MAX)
 		AudioServer.add_bus_effect(bus_idx, lp)
@@ -401,17 +413,33 @@ func _update_wetwalking(delta: float) -> void:
 			clampf(GameManager.distance / 100.0, 0.0, 1.0))
 
 func _setup_ear_filter() -> void:
-	var master: int = AudioServer.get_bus_index(&"Master")
+	# World bus: everything heard "through the ears" routes here, so the clog
+	# low-pass / panner affect it. Sends to Master.
+	AudioServer.add_bus()
+	var world: int = AudioServer.bus_count - 1
+	AudioServer.set_bus_name(world, _WORLD_BUS)
+	AudioServer.set_bus_send(world, &"Master")
 	var lp := AudioEffectLowPassFilter.new()
 	lp.cutoff_hz = _EAR_LP_CUTOFF
-	AudioServer.add_bus_effect(master, lp)
-	_ear_lp_idx = AudioServer.get_bus_effect_count(master) - 1
-	AudioServer.set_bus_effect_enabled(master, _ear_lp_idx, false)
+	AudioServer.add_bus_effect(world, lp)
+	_ear_lp_idx = AudioServer.get_bus_effect_count(world) - 1
+	AudioServer.set_bus_effect_enabled(world, _ear_lp_idx, false)
 	var pan := AudioEffectPanner.new()
 	pan.pan = 0.0
-	AudioServer.add_bus_effect(master, pan)
-	_ear_pan_idx = AudioServer.get_bus_effect_count(master) - 1
-	AudioServer.set_bus_effect_enabled(master, _ear_pan_idx, false)
+	AudioServer.add_bus_effect(world, pan)
+	_ear_pan_idx = AudioServer.get_bus_effect_count(world) - 1
+	AudioServer.set_bus_effect_enabled(world, _ear_pan_idx, false)
+
+	# Plunge bus: bypasses the world panner (straight to Master) so the clog sound
+	# can sit in the clogged ear.
+	AudioServer.add_bus()
+	var plunge: int = AudioServer.bus_count - 1
+	AudioServer.set_bus_name(plunge, _PLUNGE_BUS)
+	AudioServer.set_bus_send(plunge, &"Master")
+	var ppan := AudioEffectPanner.new()
+	ppan.pan = 0.0
+	AudioServer.add_bus_effect(plunge, ppan)
+	_plunge_pan_idx = AudioServer.get_bus_effect_count(plunge) - 1
 
 func _on_impairment_changed(type: StringName, state: bool) -> void:
 	if type == &"left_ear" or type == &"right_ear":
@@ -420,12 +448,26 @@ func _on_impairment_changed(type: StringName, state: bool) -> void:
 
 # Loop plunge / plunge2 back to back at -10 dB while either ear is clogged.
 func _update_ear_plunge() -> void:
-	var clogged: bool = ImpairmentSystem.left_ear_impaired or ImpairmentSystem.right_ear_impaired
+	var left: bool  = ImpairmentSystem.left_ear_impaired
+	var right: bool = ImpairmentSystem.right_ear_impaired
+	var clogged: bool = left or right
+
+	# Pan the clog sound to the clogged ear (centred when both).
+	var plunge: int = AudioServer.get_bus_index(_PLUNGE_BUS)
+	var pan: float = 0.0
+	if left and not right:
+		pan = -1.0
+	elif right and not left:
+		pan = 1.0
+	(AudioServer.get_bus_effect(plunge, _plunge_pan_idx) as AudioEffectPanner).pan = pan
+	AudioServer.set_bus_effect_enabled(plunge, _plunge_pan_idx, left != right)
+
 	var have: bool = _ear_plunge_player != null and is_instance_valid(_ear_plunge_player)
 	if clogged and not have:
 		_ear_plunge_player = AudioStreamPlayer.new()
 		_ear_plunge_player.stream = _pick(_plunged)
 		_ear_plunge_player.volume_db = _EAR_PLUNGE_GAIN
+		_ear_plunge_player.bus = _PLUNGE_BUS
 		_ear_plunge_player.finished.connect(_on_ear_plunge_finished)
 		add_child(_ear_plunge_player)
 		_ear_plunge_player.play()
@@ -440,26 +482,26 @@ func _on_ear_plunge_finished() -> void:
 	_ear_plunge_player.play()
 
 func _update_ear_filter() -> void:
-	var master: int = AudioServer.get_bus_index(&"Master")
+	var world: int = AudioServer.get_bus_index(_WORLD_BUS)
 	var left: bool  = ImpairmentSystem.left_ear_impaired
 	var right: bool = ImpairmentSystem.right_ear_impaired
 	if left and right:
 		# Both clogged: muffle everything, stay centered.
-		AudioServer.set_bus_effect_enabled(master, _ear_lp_idx, true)
-		AudioServer.set_bus_effect_enabled(master, _ear_pan_idx, false)
+		AudioServer.set_bus_effect_enabled(world, _ear_lp_idx, true)
+		AudioServer.set_bus_effect_enabled(world, _ear_pan_idx, false)
 	elif left:
 		# Left clogged, right clear: clear ear hears fine, silence the clogged side.
-		AudioServer.set_bus_effect_enabled(master, _ear_lp_idx, false)
-		AudioServer.set_bus_effect_enabled(master, _ear_pan_idx, true)
-		(AudioServer.get_bus_effect(master, _ear_pan_idx) as AudioEffectPanner).pan = 1.0
+		AudioServer.set_bus_effect_enabled(world, _ear_lp_idx, false)
+		AudioServer.set_bus_effect_enabled(world, _ear_pan_idx, true)
+		(AudioServer.get_bus_effect(world, _ear_pan_idx) as AudioEffectPanner).pan = 1.0
 	elif right:
 		# Right clogged, left clear: clear ear hears fine, silence the clogged side.
-		AudioServer.set_bus_effect_enabled(master, _ear_lp_idx, false)
-		AudioServer.set_bus_effect_enabled(master, _ear_pan_idx, true)
-		(AudioServer.get_bus_effect(master, _ear_pan_idx) as AudioEffectPanner).pan = -1.0
+		AudioServer.set_bus_effect_enabled(world, _ear_lp_idx, false)
+		AudioServer.set_bus_effect_enabled(world, _ear_pan_idx, true)
+		(AudioServer.get_bus_effect(world, _ear_pan_idx) as AudioEffectPanner).pan = -1.0
 	else:
-		AudioServer.set_bus_effect_enabled(master, _ear_lp_idx, false)
-		AudioServer.set_bus_effect_enabled(master, _ear_pan_idx, false)
+		AudioServer.set_bus_effect_enabled(world, _ear_lp_idx, false)
+		AudioServer.set_bus_effect_enabled(world, _ear_pan_idx, false)
 
 func _pick(pool: Array[AudioStream]) -> AudioStream:
 	return pool[randi() % pool.size()]
