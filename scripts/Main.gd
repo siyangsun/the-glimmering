@@ -1,5 +1,35 @@
 extends Node
 
+# ── Canvas layer stack (bottom → top) ──────────────────────────────────────────
+# Every CanvasLayer.layer used in the game, in one place. The post-process at 8
+# reads the screen below it, so anything under 8 is posterized into the world
+# look; anything above 8 is drawn crisp on top. Layers marked (tscn) live in
+# Main.tscn and are repeated here for reference only — keep the two in sync.
+#
+#   5   render        ocean, waves, floating items, paper boat   (tscn)
+#   6   rain          rainstick streaks
+#   8   post-process  posterize + dither; reads everything below (tscn)
+#   9   blind         blindness darkening
+#   10  eye           eye-splash droplets
+#   11  goggle        goggle tint
+#   12  flash         wave-hit white flash
+#   13  ui            dev overlay, face widget                   (tscn)
+#   14  drown         drowning tunnel vignette
+#   15  top-posterize gentle second posterize over the vignette
+#   20  debug         debug panel                                (tscn)
+#   60  menu          title screen
+#   61  lost-and-found lost-and-found screen, over the menu
+#   128 cursor        software cursor                            (CursorManager)
+const LAYER_RAIN: int            = 6
+const LAYER_BLIND: int           = 9
+const LAYER_EYE: int             = 10
+const LAYER_GOGGLE: int          = 11
+const LAYER_FLASH: int           = 12
+const LAYER_DROWN: int           = 14
+const LAYER_TOP_POSTERIZE: int   = 15
+const LAYER_MENU: int            = 60
+const LAYER_LOST_AND_FOUND: int  = 61
+
 # ── Item spawning ─────────────────────────────────────────────────────────────
 # Distances from shore at which items appear (ahead of the player by SPAWN_AHEAD).
 const SPAWN_AHEAD: float = 14.0
@@ -103,7 +133,7 @@ func _show_menu(end_msg: String = "") -> void:
 	var font := _palatino()
 
 	_menu_layer = CanvasLayer.new()
-	_menu_layer.layer = 60
+	_menu_layer.layer = LAYER_MENU
 	add_child(_menu_layer)
 
 	var bg := ColorRect.new()
@@ -183,7 +213,7 @@ func _show_lost_and_found() -> void:
 	var font := _palatino()
 
 	var laf_layer := CanvasLayer.new()
-	laf_layer.layer = 61
+	laf_layer.layer = LAYER_LOST_AND_FOUND
 	add_child(laf_layer)
 
 	var bg := ColorRect.new()
@@ -356,7 +386,7 @@ func _build_vfx() -> void:
 	# Rainstick rain — above the ocean, below the post-process shader so the
 	# streaks get posterized into the world look. Toggles itself on the item.
 	var rain_layer := CanvasLayer.new()
-	rain_layer.layer = 6
+	rain_layer.layer = LAYER_RAIN
 	add_child(rain_layer)
 	var rain := CPUParticles2D.new()
 	rain.set_script(preload("res://scripts/ui/RainEffect.gd"))
@@ -365,7 +395,7 @@ func _build_vfx() -> void:
 	# Drowning tunnel vignette — above the post-process shader (layer 8) and the
 	# other overlays, so it's a crisp tunnel laid over the finished image.
 	var drown_layer := CanvasLayer.new()
-	drown_layer.layer = 14
+	drown_layer.layer = LAYER_DROWN
 	add_child(drown_layer)
 	var drown_rect := ColorRect.new()
 	drown_rect.set_script(preload("res://scripts/ui/DrownVignette.gd"))
@@ -374,7 +404,7 @@ func _build_vfx() -> void:
 	# A gentle second posterize pass over the vignette — far fewer bands than the
 	# main post-process, just enough to give the smooth tunnel a little grain.
 	var top_pp_layer := CanvasLayer.new()
-	top_pp_layer.layer = 15
+	top_pp_layer.layer = LAYER_TOP_POSTERIZE
 	add_child(top_pp_layer)
 	var top_pp_rect := ColorRect.new()
 	top_pp_rect.set_script(preload("res://scripts/rendering/PostProcess.gd"))
@@ -386,21 +416,21 @@ func _build_vfx() -> void:
 	top_pp_layer.add_child(top_pp_rect)
 
 	var eye_layer := CanvasLayer.new()
-	eye_layer.layer = 10
+	eye_layer.layer = LAYER_EYE
 	add_child(eye_layer)
 	var eye_rect := ColorRect.new()
 	eye_rect.set_script(preload("res://scripts/ui/EyeEffect.gd"))
 	eye_layer.add_child(eye_rect)
 
 	var blind_layer := CanvasLayer.new()
-	blind_layer.layer = 9
+	blind_layer.layer = LAYER_BLIND
 	add_child(blind_layer)
 	var blind_rect := ColorRect.new()
 	blind_rect.set_script(preload("res://scripts/ui/BlindOverlay.gd"))
 	blind_layer.add_child(blind_rect)
 
 	var flash_layer := CanvasLayer.new()
-	flash_layer.layer = 12
+	flash_layer.layer = LAYER_FLASH
 	add_child(flash_layer)
 	_flash_rect = ColorRect.new()
 	_flash_rect.color = Color(0.92, 0.94, 0.97, 0.0)
@@ -409,7 +439,7 @@ func _build_vfx() -> void:
 
 	# Goggle tint — teal overlay, visible only when goggles are enabled.
 	var goggle_layer := CanvasLayer.new()
-	goggle_layer.layer = 11
+	goggle_layer.layer = LAYER_GOGGLE
 	add_child(goggle_layer)
 	_goggle_tint = ColorRect.new()
 	_goggle_tint.color = Color(0.08, 0.52, 0.70, 0.5)
