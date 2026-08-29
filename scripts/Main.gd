@@ -253,7 +253,7 @@ func _show_lost_and_found() -> void:
 		has_items = true
 		var entry := _build_laf_entry(id, font, item_y)
 		root.add_child(entry)
-		item_y += 0.14
+		item_y += 0.105
 
 	if not has_items:
 		var empty := Label.new()

@@ -10,6 +10,7 @@ var _item_panel: Control = null
 
 func _ready() -> void:
 	SignalBus.wave_hit.connect(_on_wave_hit)
+	_label.add_theme_font_size_override(&"font_size", 14)
 	_label.visible = false
 	_add_toggle_button()
 	_add_wave_buttons()
@@ -67,9 +68,11 @@ func _draw() -> void:
 	if not _expanded:
 		return
 	var rect: Rect2 = _label.get_rect()
+	rect.size = _label.get_minimum_size()  # hug the text rather than the full label rect
 	if rect.size == Vector2.ZERO:
 		return
-	var padded: Rect2 = rect.grow(8.0)
+	# Hug the height, but roughly double the width, extended rightward.
+	var padded: Rect2 = rect.grow_individual(6.0, 6.0, rect.size.x + 6.0, 6.0)
 	draw_rect(padded, Color(0.0, 0.0, 0.0, 0.55))
 	draw_rect(padded, Color(1.0, 1.0, 1.0, 1.0), false, 1.0)
 
