@@ -35,7 +35,8 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if eyes_wiping and eyes_value > 0.0:
 		eyes_value = maxf(eyes_value - EYE_WIPE_RATE * delta, 0.0)
-	elif eyes_value > 0.0 and eyes_value < EYE_RECOVERY_MAX:
+	# Rain keeps the eyes wet — no passive recovery while the rainstick is out.
+	elif eyes_value > 0.0 and eyes_value < EYE_RECOVERY_MAX and not ItemManager.is_enabled(&"rainstick"):
 		eyes_value = maxf(eyes_value - EYE_RECOVERY_RATE * delta, 0.0)
 
 func get_speed_modifier() -> float:

@@ -25,6 +25,10 @@ func _ready() -> void:
 	scale_amount_min = 0.8
 	scale_amount_max = 1.7
 	color = DROP_COLOR
+	# Vary lifetimes so a good share of drops die early — landing in the lower ~40%
+	# of the screen — while the rest fall all the way through.
+	lifetime_randomness = 0.58
+	color_ramp = _make_fade_ramp()
 	emitting = false
 	_resize()
 	get_viewport().size_changed.connect(_resize)
@@ -36,6 +40,14 @@ func _resize() -> void:
 	var vp: Vector2 = get_viewport_rect().size
 	position = Vector2(vp.x * 0.5, -20.0)
 	emission_rect_extents = Vector2(vp.x * 0.5 + 40.0, 4.0)
+
+# Opaque for most of the drop's life, then a quick fade to nothing at the end, so
+# early-dying drops visibly vanish where they land instead of popping out.
+func _make_fade_ramp() -> Gradient:
+	var grad := Gradient.new()
+	grad.offsets = PackedFloat32Array([0.0, 0.88, 1.0])
+	grad.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
+	return grad
 
 # A short vertical streak, soft at both ends.
 func _make_streak_texture() -> Texture2D:

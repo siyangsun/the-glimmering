@@ -49,6 +49,25 @@ const _SPLASH_COLOR: Color      = Color(0.96, 0.98, 1.00)
 
 var _splash_blobs: Array = []
 
+# Rain ripples on the calm water. Drawn under the waves (so a passing wave hides
+# them), projected onto the water plane — bigger up close, smaller far off. Only
+# a few at once and never far out. Spawned while the rainstick is equipped.
+const _RIPPLE_LIFE: float         = 0.9    # seconds per ripple
+const _RIPPLE_MAX_R: float        = 0.30   # world metres — fully expanded ring radius
+const _RIPPLE_MIN_DIST: float     = 1.2    # metres ahead of the player
+const _RIPPLE_MAX_DIST: float     = 6.0
+# Vertical squash follows the viewing foreshortening (eye_y / dist), so far/small
+# ripples read as thin flat ellipses and near ones are rounder.
+const _RIPPLE_SQUASH_MIN: float   = 0.06   # farthest / flattest
+const _RIPPLE_SQUASH_MAX: float   = 0.5    # nearest / roundest
+const _RIPPLE_MAX_COUNT: int      = 7
+const _RIPPLE_INTERVAL_MIN: float = 0.12
+const _RIPPLE_INTERVAL_MAX: float = 0.40
+const _RIPPLE_COLOR: Color        = Color(0.85, 0.92, 1.0)
+
+var _ripples: Array = []
+var _ripple_timer: float = 0.0
+
 # SKY_HORIZON dimmed by the current distance-based darkening; the water haze and
 # wave far-fade blend toward this so the horizon has no brightness seam.
 var _horizon_col: Color = SKY_HORIZON
@@ -90,6 +109,7 @@ func _process(delta: float) -> void:
 		if b["alpha"] <= 0.0:
 			_splash_blobs.remove_at(i)
 		i -= 1
+	_update_ripples(delta)
 	queue_redraw()
 
 func _draw() -> void:
@@ -112,6 +132,7 @@ func _draw() -> void:
 	var sky_cols := PackedColorArray([sky_top, sky_top, _horizon_col, _horizon_col])
 	draw_polygon(sky_pts, sky_cols)
 	_draw_water_surface(vw, vh, horizon_px, eye_y)
+	_draw_ripples(vw, focal, horizon_px, eye_y)
 
 	var waves: Array = get_tree().get_nodes_in_group(&"waves")
 	waves.sort_custom(func(a: Node, b: Node) -> bool:
@@ -288,6 +309,45 @@ func _draw_wave_foam(screen_top: float, screen_bot: float, vw: float,
 		var col_edge := Color(FOAM_COL.r, FOAM_COL.g, FOAM_COL.b, 0.0)
 		var col_body := Color(FOAM_COL.r, FOAM_COL.g, FOAM_COL.b, FOAM_COL.a * alpha)
 		draw_polygon(pts, PackedColorArray([col_edge, col_edge, col_body, col_body]))
+
+# ── Rain ripples ───────────────────────────────────────────────────────────────
+
+func _update_ripples(delta: float) -> void:
+	if GameManager.is_playing and ItemManager.is_enabled(&"rainstick"):
+		_ripple_timer -= delta
+		if _ripple_timer <= 0.0:
+			_ripple_timer = randf_range(_RIPPLE_INTERVAL_MIN, _RIPPLE_INTERVAL_MAX)
+			if _ripples.size() < _RIPPLE_MAX_COUNT:
+				var d: float = randf_range(_RIPPLE_MIN_DIST, _RIPPLE_MAX_DIST)
+				_ripples.append({ "dist": d, "lateral": randf_range(-0.8, 0.8) * d, "age": 0.0 })
+	var i: int = _ripples.size() - 1
+	while i >= 0:
+		_ripples[i]["age"] += delta
+		if _ripples[i]["age"] >= _RIPPLE_LIFE:
+			_ripples.remove_at(i)
+		i -= 1
+
+func _draw_ripples(vw: float, focal: float, horizon_px: float, eye_y: float) -> void:
+	for r: Dictionary in _ripples:
+		var dist: float     = r["dist"]
+		var age_frac: float = r["age"] / _RIPPLE_LIFE
+		var sy: float = WavePhysics.project_screen_y(0.0, dist, eye_y, horizon_px, focal)
+		var sx: float = vw * 0.5 + (r["lateral"] / dist) * focal
+		var screen_r: float = (_RIPPLE_MAX_R * age_frac) * focal / dist
+		# Quick fade-in, then out across its life.
+		var alpha: float = (1.0 - age_frac) * clampf(age_frac * 5.0, 0.0, 1.0) * 0.55
+		if screen_r < 0.5 or alpha <= 0.01:
+			continue
+		var width: float = maxf(screen_r * 0.08, 1.0)
+		var squash: float = clampf(eye_y / dist, _RIPPLE_SQUASH_MIN, _RIPPLE_SQUASH_MAX)
+		var col := Color(_RIPPLE_COLOR.r, _RIPPLE_COLOR.g, _RIPPLE_COLOR.b, alpha)
+		draw_set_transform(Vector2(sx, sy), 0.0, Vector2(1.0, squash))
+		draw_arc(Vector2.ZERO, screen_r, 0.0, TAU, 20, col, width, true)
+		var inner_r: float = screen_r * 0.55
+		if inner_r > 0.5:
+			var inner_col := Color(_RIPPLE_COLOR.r, _RIPPLE_COLOR.g, _RIPPLE_COLOR.b, alpha * 0.55)
+			draw_arc(Vector2.ZERO, inner_r, 0.0, TAU, 16, inner_col, maxf(width * 0.7, 1.0), true)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _eye_height() -> float:
 	var cam_y: float = 0.85 if StaggerSystem.is_knocked_down else 1.7
