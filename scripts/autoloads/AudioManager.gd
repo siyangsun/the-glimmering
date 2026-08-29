@@ -60,6 +60,10 @@ var _ambience_player: AudioStreamPlayer
 var _elegy_player: AudioStreamPlayer = null
 var _rub_eyes_player: AudioStreamPlayer = null
 
+# Continuous plunge loop while an ear is clogged.
+const _EAR_PLUNGE_GAIN: float = -10.0
+var _ear_plunge_player: AudioStreamPlayer = null
+
 # ── Wet footstep loop ────────────────────────────────────────────────────────
 var gain_wetwalking: float = -4.0
 # Pitch slides from 1.0 at shore to 0.5 (−12 semitones) at 100m.
@@ -412,6 +416,28 @@ func _setup_ear_filter() -> void:
 func _on_impairment_changed(type: StringName, state: bool) -> void:
 	if type == &"left_ear" or type == &"right_ear":
 		_update_ear_filter()
+		_update_ear_plunge()
+
+# Loop plunge / plunge2 back to back at -10 dB while either ear is clogged.
+func _update_ear_plunge() -> void:
+	var clogged: bool = ImpairmentSystem.left_ear_impaired or ImpairmentSystem.right_ear_impaired
+	var have: bool = _ear_plunge_player != null and is_instance_valid(_ear_plunge_player)
+	if clogged and not have:
+		_ear_plunge_player = AudioStreamPlayer.new()
+		_ear_plunge_player.stream = _pick(_plunged)
+		_ear_plunge_player.volume_db = _EAR_PLUNGE_GAIN
+		_ear_plunge_player.finished.connect(_on_ear_plunge_finished)
+		add_child(_ear_plunge_player)
+		_ear_plunge_player.play()
+	elif not clogged and have:
+		_ear_plunge_player.queue_free()
+		_ear_plunge_player = null
+
+func _on_ear_plunge_finished() -> void:
+	if _ear_plunge_player == null or not is_instance_valid(_ear_plunge_player):
+		return
+	_ear_plunge_player.stream = _pick(_plunged)
+	_ear_plunge_player.play()
 
 func _update_ear_filter() -> void:
 	var master: int = AudioServer.get_bus_index(&"Master")
