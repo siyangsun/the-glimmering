@@ -40,10 +40,10 @@ layer = 8
 material = SubResource("ShaderMaterial_pp")
 script = ExtResource("8_pps0")
 
-[node name="UI" type="CanvasLayer" parent="."]
-layer = 13
+[node name="DevTextLayer" type="CanvasLayer" parent="."]
+layer = 7
 
-[node name="DevOverlay" type="Control" parent="UI"]
+[node name="DevOverlay" type="Control" parent="DevTextLayer"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -52,12 +52,15 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("4_devo0")
 
-[node name="Label" type="Label" parent="UI/DevOverlay"]
+[node name="Label" type="Label" parent="DevTextLayer/DevOverlay"]
 layout_mode = 0
-offset_left = 12.0
-offset_top = 12.0
-offset_right = 800.0
-offset_bottom = 160.0
+offset_left = 40.0
+offset_top = 36.0
+offset_right = 820.0
+offset_bottom = 184.0
+
+[node name="UI" type="CanvasLayer" parent="."]
+layer = 13
 
 [node name="FaceWidget" type="Control" parent="UI"]
 layout_mode = 3

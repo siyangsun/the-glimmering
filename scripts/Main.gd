@@ -8,12 +8,13 @@ extends Node
 #
 #   5   render        ocean, waves, floating items, paper boat   (tscn)
 #   6   rain          rainstick streaks
+#   7   dev-text      "meters from shore" overlay, posterized into the world (tscn)
 #   8   post-process  posterize + dither; reads everything below (tscn)
 #   9   blind         blindness darkening
 #   10  eye           eye-splash droplets
 #   11  goggle        goggle tint
 #   12  flash         wave-hit white flash
-#   13  ui            dev overlay, face widget                   (tscn)
+#   13  ui            face widget                                (tscn)
 #   14  drown         drowning tunnel vignette
 #   15  top-posterize gentle second posterize over the vignette
 #   20  debug         debug panel                                (tscn)
