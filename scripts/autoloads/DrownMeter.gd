@@ -1,7 +1,7 @@
 extends Node
 
 const FILL_RATE: float = 0.030       # per second while nose is clogged
-const DRAIN_RATE: float = 0.050      # per second while nose is clear
+const DRAIN_RATE: float = 0.125      # per second while nose is clear
 const WAVE_HIT_AMOUNT: float = 0.04  # burst per wave hit, scaled by wave size
 
 var value: float = 0.0
