@@ -8,23 +8,23 @@ const CATALOG: Dictionary = {
 	},
 	&"pocketstones": {
 		"name": "pocket stones",
-		"description": "some rocks somebody must've thought were cool",
+		"description": "some rocks somebody must've thought were cool.",
 		"sprite": "res://assets/sprites/pocketstones.png",
 		"always_available": true,  # in the lost and found from the start; never spawns
 	},
 	&"paperboat": {
 		"name": "paper boat",
-		"description": "something to walk beside.",
+		"description": "a kid might've made this on a field trip.",
 		"sprite": "res://assets/sprites/paperboat.png",
 	},
 	&"strangewig": {
 		"name": "strange wig",
-		"description": "found tangled in the tide. still a little wet.",
+		"description": "found tangled in the tide, still a little wet.",
 		"sprite": "res://assets/sprites/strangewigfloat.png",
 	},
 	&"rainstick": {
 		"name": "rainstick",
-		"description": "tip it over and the sky remembers how.",
+		"description": "seems like a native american artifact.",
 		"sprite": "res://assets/sprites/rainstick.png",
 	},
 }
