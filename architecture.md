@@ -40,8 +40,8 @@ Main.tscn                        ← root; owns game state machine
 ## Key Systems
 
 ### WaveSystem
-- `WaveSpawner` generates a `WaveData` resource per wave: `{size, force, delay_after}`
-- Waves arrive on a timer; `delay_after` controls the gap before the next wave
+- `WaveSpawner` generates a `WaveData` resource per wave: `{size, force, height}`
+- Waves arrive on a timer; `WavePhysics.next_interval` controls the gap before the next wave
 - On wave hit: `SignalBus.wave_hit.emit(wave_data)`
 - `WaveData` is the only place size and force live — nothing else hardcodes values
 
