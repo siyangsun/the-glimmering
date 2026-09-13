@@ -86,6 +86,12 @@ func _ready() -> void:
 	add_child(_strangewig)
 
 	_nose_particles = _make_particles(Vector2(0.0, 1.0), 50.0, 10)
+	# Nose drip reads as a persistent clogged-nose runoff — make it heavier and
+	# more visible than the ear bursts: bigger, opaque, longer-lived drops.
+	_nose_particles.scale_amount_min = 3.5
+	_nose_particles.scale_amount_max = 7.0
+	_nose_particles.lifetime         = 0.7
+	_nose_particles.color            = Color(0.82, 0.92, 1.0, 1.0)
 	_left_ear_particles  = _make_particles(Vector2(-1.0, 0.3), 35.0, 6)
 	_right_ear_particles = _make_particles(Vector2(1.0, 0.3), 35.0, 6)
 	add_child(_nose_particles)
@@ -186,7 +192,7 @@ func _layout() -> void:
 	_eyes_reg["region"] = l.merge(r).grow_individual(EYE_HOVER_PAD_SIDE, EYE_HOVER_PAD_TOP, EYE_HOVER_PAD_SIDE, EYE_HOVER_PAD_BOT)
 	_nose_reg["region"] = Rect2(_nose_sprite.position, _NOSE_PX * NOSE_SCALE).grow(NOSE_HOVER_PAD)
 
-	_nose_particles.position = _nose_sprite.position + Vector2(_NOSE_PX.x * NOSE_SCALE * 0.5, _NOSE_PX.y * NOSE_SCALE)
+	_nose_particles.position = _nose_sprite.position + Vector2(_NOSE_PX.x * NOSE_SCALE * 0.5, _NOSE_PX.y * NOSE_SCALE * 0.72)
 
 	var ear_y: float = origin.y + EAR_Y_CENTER * FACE_SCALE - EAR_HOVER_H * 0.5
 	var face_w: float = _FACE_PX.x * FACE_SCALE
@@ -209,7 +215,7 @@ func _process(_delta: float) -> void:
 	_gogglesworn.visible = ItemManager.is_enabled(&"goggles")
 	_strangewig.visible = ItemManager.is_enabled(&"strangewig")
 
-	_nose_particles.amount = clampi(roundi(DrownMeter.value * 18.0), 2, 18)
+	_nose_particles.amount = clampi(roundi(DrownMeter.value * 24.0), 4, 24)
 	_nose_particles.emitting = DrownMeter.value > 0.0
 	ImpairmentSystem.eyes_shielded = _eyes_reg["over"]
 	ImpairmentSystem.eyes_wiping   = _eyes_reg["held"]
