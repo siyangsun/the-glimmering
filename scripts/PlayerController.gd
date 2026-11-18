@@ -14,7 +14,7 @@ const CAM_LERP_SPEED: float = 4.0
 const SWAY_AMP: float    = 0.05   # metres left/right
 const SWAY_TILT: float   = 0.015  # radians of roll (~0.9°)
 const BOB_AMP: float     = 0.025  # metres up/down (twice per lateral cycle)
-const STEP_FREQ: float   = 0.65   # full cycles/s at BASE_SPEED
+const STEP_FREQ: float   = 0.325  # full cycles/s at BASE_SPEED
 const PACE_EASE: float   = 5.0    # how fast sway fades in/out as you start/stop
 
 var _sway_phase: float = 0.0
