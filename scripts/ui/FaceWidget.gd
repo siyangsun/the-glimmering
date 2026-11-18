@@ -5,6 +5,8 @@ extends Control
 ## Adding a region = constructing another FaceRegion. Hover/hold changes reach the
 ## simulation through SignalBus (see FaceRegion), never by writing its fields.
 
+const FaceRegion = preload("res://scripts/ui/FaceRegion.gd")
+
 const FACE_SCALE: float = 6.0
 const EYE_SCALE: float  = 6.0
 const NOSE_SCALE: float = 4.8

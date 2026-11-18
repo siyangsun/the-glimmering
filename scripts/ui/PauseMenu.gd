@@ -1,4 +1,3 @@
-class_name PauseMenu
 extends CanvasLayer
 
 ## Esc or P pauses a run. Only reacts while a run is live (or already paused), so
@@ -9,7 +8,6 @@ var font: Font = null  # set by Main before this enters the tree
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	layer = Main.LAYER_PAUSE
 	visible = false
 	_build()
 

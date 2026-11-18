@@ -1,4 +1,3 @@
-class_name FloatingItem
 extends Node2D
 
 # Rendered through the same 2D perspective projection as the ocean (WavePhysics),

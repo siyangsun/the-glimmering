@@ -1,5 +1,7 @@
 extends Control
 
+const FloatingItem = preload("res://scripts/world/FloatingItem.gd")
+
 @onready var _label: Label = $Label
 
 var _max_wave_h: float = 0.0

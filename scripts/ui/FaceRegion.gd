@@ -1,4 +1,3 @@
-class_name FaceRegion
 extends RefCounted
 
 ## One clickable spot on the face (eyes, nose, an ear): config + live state.

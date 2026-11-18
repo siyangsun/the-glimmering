@@ -1,4 +1,3 @@
-class_name PaperBoat
 extends Node2D
 
 # A non-interactive companion that floats just ahead of the player, drawn through

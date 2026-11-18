@@ -1,4 +1,3 @@
-class_name Main
 extends Node
 
 # ── Canvas layer stack (bottom → top) ──────────────────────────────────────────
@@ -34,6 +33,10 @@ const LAYER_MENU: int            = 60
 const LAYER_LOST_AND_FOUND: int  = 61
 const LAYER_PAUSE: int           = 62
 
+const FloatingItem = preload("res://scripts/world/FloatingItem.gd")
+const PaperBoat = preload("res://scripts/world/PaperBoat.gd")
+const PauseMenu = preload("res://scripts/ui/PauseMenu.gd")
+
 # ── Item spawning ─────────────────────────────────────────────────────────────
 # Distances from shore at which items appear (ahead of the player by SPAWN_AHEAD).
 const SPAWN_AHEAD: float = 14.0
@@ -50,6 +53,7 @@ func _ready() -> void:
 	_apply_font()
 	_build_vfx()
 	var pause := PauseMenu.new()
+	pause.layer = LAYER_PAUSE
 	pause.font = _palatino()
 	add_child(pause)
 	SignalBus.game_ended.connect(_on_game_ended)
