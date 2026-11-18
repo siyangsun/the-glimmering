@@ -48,7 +48,6 @@ var _menu_layer: CanvasLayer = null
 
 func _ready() -> void:
 	_apply_font()
-	_build_world()
 	_build_vfx()
 	var pause := PauseMenu.new()
 	pause.font = _palatino()
@@ -486,21 +485,3 @@ func _palatino_italic() -> SystemFont:
 	font.font_names = PackedStringArray(["Palatino Linotype"])
 	font.font_italic = true
 	return font
-
-func _build_world() -> void:
-	var env_node := WorldEnvironment.new()
-	var env := Environment.new()
-	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.52, 0.55, 0.60)
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.52, 0.55, 0.60)
-	env.ambient_light_energy = 0.8
-	env_node.environment = env
-	add_child(env_node)
-
-	var light := DirectionalLight3D.new()
-	light.rotation_degrees = Vector3(-55.0, -20.0, 0.0)
-	light.light_color = Color(0.82, 0.85, 0.90)
-	light.light_energy = 0.5
-	light.shadow_enabled = false
-	add_child(light)

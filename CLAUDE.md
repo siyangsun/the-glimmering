@@ -5,14 +5,15 @@ Read `architecture.md` for system design and MVP plan before touching anything.
 
 ## Project
 First-person surreal art game. A depressed person walks into the ocean.
-Godot 4, GDScript. 3D world, 2D overlay for waves and impairments.
+Godot 4, GDScript. Rendered entirely as 2D canvas (no 3D nodes); the world is a 1D
+distance simulation projected by WavePhysics.
 See `brainstorm.md` for design intent; `architecture.md` for system layout.
 
 ## Engine & Language
 - Godot 4.7.1, GDScript
 - Renderer: GL Compatibility (all visuals are 2D canvas; shaders are canvas_item + screen texture)
-- 3D scene, CanvasLayer overlays for wave visual and impairment effects
-- No physics body needed for player — just a Node3D with Camera3D
+- CanvasLayer stack for world + overlays (see layer table in Main.gd)
+- No camera node: GameManager.cam_y/cam_x/cam_roll (bob/sway/roll) are applied by the 2D renderers
 
 ## Architecture
 Five autoloads: `GameManager`, `DrownMeter`, `ImpairmentSystem`, `AudioManager`, `SignalBus`.

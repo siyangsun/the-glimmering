@@ -1,4 +1,4 @@
-extends Node3D
+extends Node
 
 const BASE_SPEED: float = 1.2           # m/s on dry land / very shallow water
 const KNOCKED_SPEED_MULT: float = 0.20  # 80% speed reduction when down
@@ -9,23 +9,35 @@ const SUBMERGED_SPEED: float = 0.22    # m/s
 
 const CAM_LERP_SPEED: float = 4.0
 
-const SWAY_AMP: float    = 0.25   # metres left/right
-const SWAY_TILT: float   = 0.08   # radians of Z roll (~4.6°)
-const BOB_AMP: float     = 0.06   # metres up/down (twice per lateral cycle)
-const SWAY_FREQ: float   = 1.3    # full cycles per second while walking
+# Walking motion. Kept subtle on purpose. The world is drawn in 2D, so these feed
+# GameManager.cam_* and the renderers shift/roll the projection — there is no 3D camera.
+const SWAY_AMP: float    = 0.05   # metres left/right
+const SWAY_TILT: float   = 0.015  # radians of roll (~0.9°)
+const BOB_AMP: float     = 0.025  # metres up/down (twice per lateral cycle)
+const STEP_FREQ: float   = 1.3    # full cycles/s at BASE_SPEED; slows with actual speed
 const SWAY_RETURN: float = 5.0    # lerp speed back to centre when stopped
 
 var _sway_phase: float = 0.0
-
-@onready var _camera: Camera3D = $Camera
+var _base_y: float = GameManager.STANDING_CAM_Y  # smoothed eye height, before bob
+var _bob: float = 0.0
 
 func _ready() -> void:
 	SignalBus.wave_hit.connect(_on_wave_hit)
+	SignalBus.game_reset.connect(_on_game_reset)
+
+func _on_game_reset() -> void:
+	_sway_phase = 0.0
+	_base_y = GameManager.STANDING_CAM_Y
+	_bob = 0.0
+	GameManager.cam_y = _base_y
+	GameManager.cam_x = 0.0
+	GameManager.cam_roll = 0.0
 
 func _process(delta: float) -> void:
 	if not GameManager.is_playing:
 		return
 
+	var speed: float = 0.0
 	if OS.is_debug_build() and Input.is_key_pressed(KEY_SHIFT):  # dev fast-forward
 		GameManager.advance(10.0 * delta)
 	elif StaggerSystem.is_knocked_down:
@@ -37,28 +49,26 @@ func _process(delta: float) -> void:
 			GameManager.advance(BASE_SPEED * KNOCKED_SPEED_MULT * delta)
 	else:
 		if Input.is_action_pressed(&"walk_forward"):
-			var speed: float = BASE_SPEED * ImpairmentSystem.get_speed_modifier() * _water_drag()
+			speed = BASE_SPEED * ImpairmentSystem.get_speed_modifier() * _water_drag()
 			GameManager.advance(speed * delta)
-
-	# Sync Z position to distance
-	position.z = -GameManager.distance
 
 	var walking: bool = Input.is_action_pressed(&"walk_forward") and not StaggerSystem.is_knocked_down
 
-	# Camera height: base target + vertical bob while walking
-	var target_y: float = GameManager.cam_height()
-	if walking:
-		target_y += sin(_sway_phase * 2.0) * BOB_AMP
-	_camera.position.y = lerpf(_camera.position.y, target_y, CAM_LERP_SPEED * delta)
+	# Eye height eases between standing and knocked-down; bob rides on top.
+	var target_y: float = GameManager.KNOCKED_CAM_Y if StaggerSystem.is_knocked_down else GameManager.STANDING_CAM_Y
+	_base_y = lerpf(_base_y, target_y, CAM_LERP_SPEED * delta)
 
-	# Side-to-side sway and tilt while walking
 	if walking:
-		_sway_phase += delta * SWAY_FREQ * TAU
-		_camera.position.x = sin(_sway_phase) * SWAY_AMP
-		_camera.rotation.z = sin(_sway_phase) * SWAY_TILT
+		# Steps slow with the water: wading deep is a slow roll, not a fast shuffle.
+		_sway_phase += delta * STEP_FREQ * TAU * (speed / BASE_SPEED)
+		_bob = sin(_sway_phase * 2.0) * BOB_AMP
+		GameManager.cam_x = sin(_sway_phase) * SWAY_AMP
+		GameManager.cam_roll = sin(_sway_phase) * SWAY_TILT
 	else:
-		_camera.position.x = lerpf(_camera.position.x, 0.0, SWAY_RETURN * delta)
-		_camera.rotation.z = lerpf(_camera.rotation.z,  0.0, SWAY_RETURN * delta)
+		_bob = lerpf(_bob, 0.0, SWAY_RETURN * delta)
+		GameManager.cam_x = lerpf(GameManager.cam_x, 0.0, SWAY_RETURN * delta)
+		GameManager.cam_roll = lerpf(GameManager.cam_roll, 0.0, SWAY_RETURN * delta)
+	GameManager.cam_y = _base_y + _bob
 
 # Water resistance scales linearly with depth ratio (water_level / player height).
 # 0 = dry land (no drag), 1 = fully submerged (maximum drag).

@@ -62,11 +62,11 @@ func _process(delta: float) -> void:
 	var vp: Vector2 = get_viewport_rect().size
 	var focal: float      = WavePhysics.focal_length(vp.y)
 	var horizon_px: float = vp.y * WavePhysics.HORIZON_Y_FRAC
-	var eye_y: float      = WavePhysics.eye_height_above_water(GameManager.cam_height(), GameManager.water_level())
+	var eye_y: float      = WavePhysics.eye_height_above_water(GameManager.cam_y, GameManager.water_level())
 
 	var world_y: float = sin(_bob_phase) * BOB_AMP
 	var sy: float = WavePhysics.project_screen_y(world_y, dist, eye_y, horizon_px, focal)
-	var sx: float = vp.x * 0.5 + (lateral / dist) * focal
+	var sx: float = vp.x * 0.5 + ((lateral - GameManager.cam_x) / dist) * focal
 	_screen_pos = Vector2(sx, sy)
 	_screen_h   = ITEM_WORLD_H * focal / dist
 	_visible_now = true
@@ -97,7 +97,8 @@ func _input(event: InputEvent) -> void:
 	var mb := event as InputEventMouseButton
 	if mb.button_index != MOUSE_BUTTON_LEFT or not mb.pressed:
 		return
-	if mb.position.distance_to(_screen_pos) <= _hover_radius():
+	# Local coords, so the render layer's camera roll doesn't skew the hit test.
+	if get_local_mouse_position().distance_to(_screen_pos) <= _hover_radius():
 		_collect()
 
 func _collect() -> void:

@@ -67,12 +67,12 @@ func _draw() -> void:
 	var vp: Vector2 = get_viewport_rect().size
 	var focal: float      = WavePhysics.focal_length(vp.y)
 	var horizon_px: float = vp.y * WavePhysics.HORIZON_Y_FRAC
-	var eye_y: float      = WavePhysics.eye_height_above_water(GameManager.cam_height(), GameManager.water_level())
+	var eye_y: float      = WavePhysics.eye_height_above_water(GameManager.cam_y, GameManager.water_level())
 
 	var world_y: float = sin(_phase * BOB_FREQ * TAU) * BOB_AMP
 	var lateral: float = LATERAL_OFFSET + sin(_phase * SWAY_FREQ * TAU) * SWAY_AMP
 	var sy: float = WavePhysics.project_screen_y(world_y, AHEAD, eye_y, horizon_px, focal)
-	var sx: float = vp.x * 0.5 + (lateral / AHEAD) * focal
+	var sx: float = vp.x * 0.5 + ((lateral - GameManager.cam_x) / AHEAD) * focal
 	var h: float  = WORLD_H * focal / AHEAD
 
 	# Dive below the bottom of the frame as _duck rises to 1.

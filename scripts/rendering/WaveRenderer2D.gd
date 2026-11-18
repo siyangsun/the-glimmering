@@ -110,7 +110,22 @@ func _process(delta: float) -> void:
 			_splash_blobs.remove_at(i)
 		i -= 1
 	_update_ripples(delta)
+	_apply_view_roll()
 	queue_redraw()
+
+# Camera roll: rotate the whole render layer about the screen centre. Scaled up just
+# enough to keep the rotated corners covered (no 3D camera exists to do this for us).
+func _apply_view_roll() -> void:
+	var layer := get_parent() as CanvasLayer
+	if layer == null:
+		return
+	var vp: Vector2 = get_viewport_rect().size
+	var roll: float = GameManager.cam_roll
+	var cover: float = 1.0 + absf(roll) * maxf(vp.x / vp.y, vp.y / vp.x) * 1.1
+	var c: Vector2 = vp * 0.5
+	layer.transform = Transform2D().translated(c) \
+		* Transform2D(roll, Vector2(cover, cover), 0.0, Vector2.ZERO) \
+		* Transform2D().translated(-c)
 
 func _draw() -> void:
 	var vp: Rect2       = get_viewport_rect()
@@ -332,7 +347,7 @@ func _draw_ripples(vw: float, focal: float, horizon_px: float, eye_y: float) -> 
 		var dist: float     = r["dist"]
 		var age_frac: float = r["age"] / _RIPPLE_LIFE
 		var sy: float = WavePhysics.project_screen_y(0.0, dist, eye_y, horizon_px, focal)
-		var sx: float = vw * 0.5 + (r["lateral"] / dist) * focal
+		var sx: float = vw * 0.5 + ((r["lateral"] - GameManager.cam_x) / dist) * focal
 		var screen_r: float = (_RIPPLE_MAX_R * age_frac) * focal / dist
 		# Quick fade-in, then out across its life.
 		var alpha: float = (1.0 - age_frac) * clampf(age_frac * 5.0, 0.0, 1.0) * 0.55
@@ -350,4 +365,4 @@ func _draw_ripples(vw: float, focal: float, horizon_px: float, eye_y: float) -> 
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _eye_height() -> float:
-	return WavePhysics.eye_height_above_water(GameManager.cam_height(), GameManager.water_level())
+	return WavePhysics.eye_height_above_water(GameManager.cam_y, GameManager.water_level())

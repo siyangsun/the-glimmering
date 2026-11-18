@@ -14,6 +14,12 @@ const STANDING_CAM_Y: float = 1.7
 const KNOCKED_CAM_Y: float = 0.85
 
 var distance: float = 0.0
+
+# View state — presentation only. PlayerController writes it; the 2D renderers read it.
+var cam_y: float = STANDING_CAM_Y  # eye height (m), eased + walking bob
+var cam_x: float = 0.0             # lateral sway (m)
+var cam_roll: float = 0.0          # radians
+
 var is_playing: bool = false
 var run_count: int = 0
 var _arrival_stinger_played: bool = false
@@ -41,9 +47,6 @@ func water_level() -> float:
 
 func player_height() -> float:
 	return KNOCKED_HEIGHT if StaggerSystem.is_knocked_down else STANDING_HEIGHT
-
-func cam_height() -> float:
-	return KNOCKED_CAM_Y if StaggerSystem.is_knocked_down else STANDING_CAM_Y
 
 func unsubmerged_height() -> float:
 	return maxf(player_height() - water_level(), 0.1)
