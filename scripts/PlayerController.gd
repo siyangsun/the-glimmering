@@ -14,12 +14,13 @@ const CAM_LERP_SPEED: float = 4.0
 const SWAY_AMP: float    = 0.05   # metres left/right
 const SWAY_TILT: float   = 0.015  # radians of roll (~0.9°)
 const BOB_AMP: float     = 0.025  # metres up/down (twice per lateral cycle)
-const STEP_FREQ: float   = 1.3    # full cycles/s at BASE_SPEED; slows with actual speed
-const SWAY_RETURN: float = 5.0    # lerp speed back to centre when stopped
+const STEP_FREQ: float   = 0.65   # full cycles/s at BASE_SPEED
+const PACE_EASE: float   = 5.0    # how fast sway fades in/out as you start/stop
 
 var _sway_phase: float = 0.0
 var _base_y: float = GameManager.STANDING_CAM_Y  # smoothed eye height, before bob
 var _bob: float = 0.0
+var _pace: float = 0.0  # eased speed / BASE_SPEED; scales sway rate and size
 
 func _ready() -> void:
 	SignalBus.wave_hit.connect(_on_wave_hit)
@@ -29,6 +30,7 @@ func _on_game_reset() -> void:
 	_sway_phase = 0.0
 	_base_y = GameManager.STANDING_CAM_Y
 	_bob = 0.0
+	_pace = 0.0
 	GameManager.cam_y = _base_y
 	GameManager.cam_x = 0.0
 	GameManager.cam_roll = 0.0
@@ -52,22 +54,17 @@ func _process(delta: float) -> void:
 			speed = BASE_SPEED * ImpairmentSystem.get_speed_modifier() * _water_drag()
 			GameManager.advance(speed * delta)
 
-	var walking: bool = Input.is_action_pressed(&"walk_forward") and not StaggerSystem.is_knocked_down
-
 	# Eye height eases between standing and knocked-down; bob rides on top.
 	var target_y: float = GameManager.KNOCKED_CAM_Y if StaggerSystem.is_knocked_down else GameManager.STANDING_CAM_Y
 	_base_y = lerpf(_base_y, target_y, CAM_LERP_SPEED * delta)
 
-	if walking:
-		# Steps slow with the water: wading deep is a slow roll, not a fast shuffle.
-		_sway_phase += delta * STEP_FREQ * TAU * (speed / BASE_SPEED)
-		_bob = sin(_sway_phase * 2.0) * BOB_AMP
-		GameManager.cam_x = sin(_sway_phase) * SWAY_AMP
-		GameManager.cam_roll = sin(_sway_phase) * SWAY_TILT
-	else:
-		_bob = lerpf(_bob, 0.0, SWAY_RETURN * delta)
-		GameManager.cam_x = lerpf(GameManager.cam_x, 0.0, SWAY_RETURN * delta)
-		GameManager.cam_roll = lerpf(GameManager.cam_roll, 0.0, SWAY_RETURN * delta)
+	# Sway rate and size both follow actual walking speed (0 when not walking),
+	# so wading deep or with clogged ears is a slower, shallower roll.
+	_pace = lerpf(_pace, speed / BASE_SPEED, PACE_EASE * delta)
+	_sway_phase += delta * STEP_FREQ * TAU * _pace
+	_bob = sin(_sway_phase * 2.0) * BOB_AMP * _pace
+	GameManager.cam_x = sin(_sway_phase) * SWAY_AMP * _pace
+	GameManager.cam_roll = sin(_sway_phase) * SWAY_TILT * _pace
 	GameManager.cam_y = _base_y + _bob
 
 # Water resistance scales linearly with depth ratio (water_level / player height).
