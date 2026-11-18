@@ -12,6 +12,7 @@ func reset() -> void:
 
 func _ready() -> void:
 	SignalBus.wave_hit.connect(_on_wave_hit)
+	SignalBus.game_reset.connect(reset)
 
 func _process(delta: float) -> void:
 	if not GameManager.is_playing:
@@ -19,7 +20,7 @@ func _process(delta: float) -> void:
 	var shield: float = ImpairmentSystem.SHIELD_FACTOR if ImpairmentSystem.nose_shielded else 1.0
 	var stagger: float = STAGGER_MULT if StaggerSystem.is_knocked_down else 1.0
 	if ImpairmentSystem.nose_impaired:
-		value = min(value + FILL_RATE * shield * stagger * delta, 1.0)
+		value = minf(value + FILL_RATE * shield * stagger * delta, 1.0)
 		if value >= 1.0:
 			SignalBus.game_ended.emit(&"drown")
 	else:
@@ -29,4 +30,4 @@ func _on_wave_hit(wave_data: WaveData) -> void:
 	if not GameManager.is_playing:
 		return
 	var shield: float = ImpairmentSystem.SHIELD_FACTOR if ImpairmentSystem.nose_shielded else 1.0
-	value = min(value + wave_data.size * WAVE_HIT_AMOUNT * shield, 1.0)
+	value = minf(value + wave_data.size * WAVE_HIT_AMOUNT * shield, 1.0)

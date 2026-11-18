@@ -1,16 +1,9 @@
 extends Control
 
-## Bottom-right UI face. Each clickable region is described by a config+state
-## Dictionary. Generic helpers handle hover, hold-loop, click animation, and
-## release — adding a new region is just declaring its config.
-##
-## Region config keys (set once):
-##   cursor_id, priority, hover_cursor, flip_h, click_frames, click_times,
-##   hold_frames, hold_frame_time, release_frame, release_time, action
-## Optional:
-##   particles  — CPUParticles2D to restart on click
-## State keys (mutated at runtime):
-##   region, over, anim, held, loop_running
+## Bottom-right UI face. Each clickable spot is a FaceRegion (config + state);
+## generic helpers here handle hover, hold-loop, click animation and release.
+## Adding a region = constructing another FaceRegion. Hover/hold changes reach the
+## simulation through SignalBus (see FaceRegion), never by writing its fields.
 
 const FACE_SCALE: float = 6.0
 const EYE_SCALE: float  = 6.0
@@ -53,10 +46,10 @@ var _nose_particles: CPUParticles2D
 var _left_ear_particles: CPUParticles2D
 var _right_ear_particles: CPUParticles2D
 
-var _eyes_reg: Dictionary
-var _nose_reg: Dictionary
-var _left_ear_reg: Dictionary
-var _right_ear_reg: Dictionary
+var _eyes_reg: FaceRegion
+var _nose_reg: FaceRegion
+var _left_ear_reg: FaceRegion
+var _right_ear_reg: FaceRegion
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -98,57 +91,39 @@ func _ready() -> void:
 	add_child(_left_ear_particles)
 	add_child(_right_ear_particles)
 
-	_eyes_reg = {
-		"cursor_id": &"face_eyes", "priority": 20, "flip_h": false,
-		"hover_cursor": &"reach",
-		"click_frames": [&"fists", &"fists2"],
-		"click_times":  [0.05, 0.09],
-		"hold_frames":  [&"fists", &"fists2", &"fists3", &"fists2"],
-		"hold_frame_time": 0.08,
-		"release_frame": &"fists2", "release_time": 0.07,
-		"action": &"wipe_eyes",
-		"region": Rect2(), "over": false, "anim": false, "held": false, "loop_running": false,
-	}
-	_nose_reg = {
-		"cursor_id": &"face_nose", "priority": 20, "flip_h": false,
-		"hover_cursor": &"reach",
-		"click_frames": [&"pinch", &"pinch2"],
-		"click_times":  [0.07, 0.10],
-		"hold_frames":  [&"pinch", &"pinch2"],
-		"hold_frame_time": 0.10,
-		"release_frame": &"pinch", "release_time": 0.07,
-		"action": &"blow_nose",
-		"region": Rect2(), "over": false, "anim": false, "held": false, "loop_running": false,
-	}
-	_left_ear_reg = {
-		"cursor_id": &"face_left_ear", "priority": 20, "flip_h": true,
-		"hover_cursor": &"smack",
-		"click_frames": [&"smack2"],
-		"click_times":  [0.08],
-		"hold_frames":  [&"smack2"],
-		"hold_frame_time": 0.5,
-		"release_frame": &"smack", "release_time": 0.0,
-		"action": &"clear_left_ear",
-		"particles": null,
-		"region": Rect2(), "over": false, "anim": false, "held": false, "loop_running": false,
-	}
-	_right_ear_reg = {
-		"cursor_id": &"face_right_ear", "priority": 20, "flip_h": false,
-		"hover_cursor": &"smack",
-		"click_frames": [&"smack2"],
-		"click_times":  [0.08],
-		"hold_frames":  [&"smack2"],
-		"hold_frame_time": 0.5,
-		"release_frame": &"smack", "release_time": 0.0,
-		"action": &"clear_right_ear",
-		"particles": null,
-		"region": Rect2(), "over": false, "anim": false, "held": false, "loop_running": false,
-	}
-	_left_ear_reg["particles"]  = _left_ear_particles
-	_right_ear_reg["particles"] = _right_ear_particles
+	_eyes_reg = FaceRegion.new(&"face_eyes", &"wipe_eyes", &"reach")
+	_eyes_reg.click_frames = [&"fists", &"fists2"]
+	_eyes_reg.click_times = [0.05, 0.09]
+	_eyes_reg.hold_frames = [&"fists", &"fists2", &"fists3", &"fists2"]
+	_eyes_reg.hold_frame_time = 0.08
+	_eyes_reg.release_frame = &"fists2"
+	_eyes_reg.release_time = 0.07
+
+	_nose_reg = FaceRegion.new(&"face_nose", &"blow_nose", &"reach")
+	_nose_reg.click_frames = [&"pinch", &"pinch2"]
+	_nose_reg.click_times = [0.07, 0.10]
+	_nose_reg.hold_frames = [&"pinch", &"pinch2"]
+	_nose_reg.hold_frame_time = 0.10
+	_nose_reg.release_frame = &"pinch"
+	_nose_reg.release_time = 0.07
+
+	_left_ear_reg = _make_ear_region(&"face_left_ear", &"clear_left_ear", true, _left_ear_particles)
+	_right_ear_reg = _make_ear_region(&"face_right_ear", &"clear_right_ear", false, _right_ear_particles)
 
 	get_viewport().size_changed.connect(_layout)
 	_layout()
+
+func _make_ear_region(cursor_id: StringName, action: StringName, flip: bool,
+		burst: CPUParticles2D) -> FaceRegion:
+	var reg := FaceRegion.new(cursor_id, action, &"smack", flip)
+	reg.click_frames = [&"smack2"]
+	reg.click_times = [0.08]
+	reg.hold_frames = [&"smack2"]
+	reg.hold_frame_time = 0.5
+	reg.release_frame = &"smack"
+	reg.release_time = 0.0
+	reg.particles = burst
+	return reg
 
 func _make_sprite(tex: Texture2D, s: float) -> TextureRect:
 	var tr := TextureRect.new()
@@ -189,23 +164,23 @@ func _layout() -> void:
 
 	var l: Rect2 = Rect2(_eye_l.position, _EYE_PX * EYE_SCALE)
 	var r: Rect2 = Rect2(_eye_r.position, _EYE_PX * EYE_SCALE)
-	_eyes_reg["region"] = l.merge(r).grow_individual(EYE_HOVER_PAD_SIDE, EYE_HOVER_PAD_TOP, EYE_HOVER_PAD_SIDE, EYE_HOVER_PAD_BOT)
-	_nose_reg["region"] = Rect2(_nose_sprite.position, _NOSE_PX * NOSE_SCALE).grow(NOSE_HOVER_PAD)
+	_eyes_reg.region = l.merge(r).grow_individual(EYE_HOVER_PAD_SIDE, EYE_HOVER_PAD_TOP, EYE_HOVER_PAD_SIDE, EYE_HOVER_PAD_BOT)
+	_nose_reg.region = Rect2(_nose_sprite.position, _NOSE_PX * NOSE_SCALE).grow(NOSE_HOVER_PAD)
 
 	_nose_particles.position = _nose_sprite.position + Vector2(_NOSE_PX.x * NOSE_SCALE * 0.5, _NOSE_PX.y * NOSE_SCALE * 0.72)
 
 	var ear_y: float = origin.y + EAR_Y_CENTER * FACE_SCALE - EAR_HOVER_H * 0.5
 	var face_w: float = _FACE_PX.x * FACE_SCALE
-	_left_ear_reg["region"]  = Rect2(origin.x - EAR_HOVER_W + EAR_INSET, ear_y, EAR_HOVER_W, EAR_HOVER_H)
-	_right_ear_reg["region"] = Rect2(origin.x + face_w - EAR_INSET, ear_y, EAR_HOVER_W, EAR_HOVER_H)
+	_left_ear_reg.region  = Rect2(origin.x - EAR_HOVER_W + EAR_INSET, ear_y, EAR_HOVER_W, EAR_HOVER_H)
+	_right_ear_reg.region = Rect2(origin.x + face_w - EAR_INSET, ear_y, EAR_HOVER_W, EAR_HOVER_H)
 	_left_ear_particles.position  = Vector2(origin.x, ear_y + EAR_HOVER_H * 0.5 + 10.0)
 	_right_ear_particles.position = Vector2(origin.x + face_w, ear_y + EAR_HOVER_H * 0.5 + 10.0)
 
 	var mouse_pos: Vector2 = get_viewport().get_mouse_position()
-	for reg: Dictionary in _all_regions():
+	for reg: FaceRegion in _all_regions():
 		_refresh_region(reg, mouse_pos)
 
-func _all_regions() -> Array[Dictionary]:
+func _all_regions() -> Array[FaceRegion]:
 	return [_eyes_reg, _nose_reg, _left_ear_reg, _right_ear_reg]
 
 func _process(_delta: float) -> void:
@@ -217,19 +192,24 @@ func _process(_delta: float) -> void:
 
 	_nose_particles.amount = clampi(roundi(DrownMeter.value * 24.0), 4, 24)
 	_nose_particles.emitting = DrownMeter.value > 0.0
-	ImpairmentSystem.eyes_shielded = _eyes_reg["over"]
-	ImpairmentSystem.eyes_wiping   = _eyes_reg["held"]
-	ImpairmentSystem.nose_shielded = _nose_reg["held"]
+
+	# A release we never saw (mouse let go while paused, or outside the window)
+	# would leave a region held forever — settle it here.
+	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		for reg: FaceRegion in _all_regions():
+			if reg.held and not reg.anim:
+				reg.held = false
+				_release_anim(reg)
 
 	# Rub-eyes sound: start when wiping begins, fade out when it stops.
-	var wiping: bool = _eyes_reg["held"]
+	var wiping: bool = _eyes_reg.held
 	if wiping and not _eyes_wiping_prev:
 		AudioManager.play_rub_eyes()
 	elif not wiping and _eyes_wiping_prev:
 		AudioManager.fade_rub_eyes(0.2)
 	_eyes_wiping_prev = wiping
 
-	var shut: bool = _eyes_reg["held"] or _nose_reg["held"] or ImpairmentSystem.eyes_value >= ImpairmentSystem.EYE_MAX
+	var shut: bool = _eyes_reg.held or _nose_reg.held or ImpairmentSystem.eyes_value >= ImpairmentSystem.EYE_MAX
 	if shut == _eyes_shut:
 		return
 	_eyes_shut = shut
@@ -240,93 +220,89 @@ func _process(_delta: float) -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		var pos: Vector2 = (event as InputEventMouseMotion).position
-		for reg: Dictionary in _all_regions():
+		for reg: FaceRegion in _all_regions():
 			_refresh_region(reg, pos)
 	elif event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		if mb.button_index != MOUSE_BUTTON_LEFT:
 			return
-		for reg: Dictionary in _all_regions():
-			if mb.pressed and reg["over"] and not reg["anim"] and GameManager.is_playing:
-				reg["held"] = true
+		for reg: FaceRegion in _all_regions():
+			if mb.pressed and reg.over and not reg.anim and GameManager.is_playing:
+				reg.held = true
 				_click_anim(reg)
-			elif not mb.pressed and reg["held"] and not reg["anim"]:
-				reg["held"] = false
+			elif not mb.pressed and reg.held and not reg.anim:
+				reg.held = false
 				_release_anim(reg)
 
-func _refresh_region(reg: Dictionary, mouse_pos: Vector2) -> void:
-	if reg["anim"]:
+func _refresh_region(reg: FaceRegion, mouse_pos: Vector2) -> void:
+	if reg.anim:
 		return
-	var over: bool = (reg["region"] as Rect2).has_point(mouse_pos)
-	if over == reg["over"]:
+	var over: bool = reg.region.has_point(mouse_pos)
+	if over == reg.over:
 		return
-	reg["over"] = over
-	var flip: bool = reg.get("flip_h", false)
+	reg.over = over
 	if over:
 		if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 			_start_hold(reg)
 		else:
-			CursorManager.request(reg["cursor_id"], reg["hover_cursor"], reg["priority"], flip)
+			_show_hover_cursor(reg)
 	else:
-		reg["held"] = false
-		CursorManager.release(reg["cursor_id"])
+		reg.held = false
+		CursorManager.release(reg.cursor_id)
 
-func _click_anim(reg: Dictionary) -> void:
-	reg["anim"] = true
-	var fire_particles: bool = reg.has("particles") and reg["particles"] != null
+func _show_hover_cursor(reg: FaceRegion) -> void:
+	CursorManager.request(reg.cursor_id, reg.hover_cursor, reg.priority, reg.flip_h)
+
+func _click_anim(reg: FaceRegion) -> void:
+	reg.anim = true
+	var fire_particles: bool = reg.particles != null
 	if fire_particles:
-		match reg["action"]:
+		match reg.action:
 			&"clear_left_ear":  fire_particles = ImpairmentSystem.left_ear_impaired
 			&"clear_right_ear": fire_particles = ImpairmentSystem.right_ear_impaired
 	# Ear smack sound — read the wet state before action_performed clears it.
 	# (Rub-eyes is driven by the wiping state in _process so it can fade on release.)
-	match reg["action"]:
+	match reg.action:
 		&"clear_left_ear":  AudioManager.play_ear_smack(false, ImpairmentSystem.left_ear_impaired)
 		&"clear_right_ear": AudioManager.play_ear_smack(true, ImpairmentSystem.right_ear_impaired)
-	SignalBus.action_performed.emit(reg["action"])
+	SignalBus.action_performed.emit(reg.action)
 	if fire_particles:
-		(reg["particles"] as CPUParticles2D).restart()
-	var frames: Array = reg["click_frames"]
-	var times: Array  = reg["click_times"]
-	var flip: bool = reg.get("flip_h", false)
-	for i: int in frames.size():
-		CursorManager.request(reg["cursor_id"], frames[i], reg["priority"], flip)
-		await get_tree().create_timer(times[i]).timeout
-	reg["anim"] = false
+		reg.particles.restart()
+	for i: int in reg.click_frames.size():
+		CursorManager.request(reg.cursor_id, reg.click_frames[i], reg.priority, reg.flip_h)
+		await get_tree().create_timer(reg.click_times[i]).timeout
+	reg.anim = false
 
-	reg["over"] = (reg["region"] as Rect2).has_point(get_viewport().get_mouse_position())
-	if reg["over"]:
+	reg.over = reg.region.has_point(get_viewport().get_mouse_position())
+	if reg.over:
 		if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 			_start_hold(reg)
 		else:
-			reg["held"] = false
-			CursorManager.request(reg["cursor_id"], reg["hover_cursor"], reg["priority"], flip)
+			reg.held = false
+			_show_hover_cursor(reg)
 	else:
-		reg["held"] = false
-		CursorManager.release(reg["cursor_id"])
+		reg.held = false
+		CursorManager.release(reg.cursor_id)
 
-func _start_hold(reg: Dictionary) -> void:
-	reg["held"] = true
+func _start_hold(reg: FaceRegion) -> void:
+	reg.held = true
 	_hold_loop(reg)
 
-func _hold_loop(reg: Dictionary) -> void:
-	if reg["loop_running"]:
+func _hold_loop(reg: FaceRegion) -> void:
+	if reg.loop_running:
 		return
-	reg["loop_running"] = true
-	var frames: Array = reg["hold_frames"]
-	var flip: bool = reg.get("flip_h", false)
+	reg.loop_running = true
 	var i: int = 0
-	while reg["held"]:
-		CursorManager.request(reg["cursor_id"], frames[i % frames.size()], reg["priority"], flip)
+	while reg.held:
+		CursorManager.request(reg.cursor_id, reg.hold_frames[i % reg.hold_frames.size()], reg.priority, reg.flip_h)
 		i += 1
-		await get_tree().create_timer(reg["hold_frame_time"]).timeout
-	reg["loop_running"] = false
+		await get_tree().create_timer(reg.hold_frame_time).timeout
+	reg.loop_running = false
 
-func _release_anim(reg: Dictionary) -> void:
-	var flip: bool = reg.get("flip_h", false)
-	CursorManager.request(reg["cursor_id"], reg["release_frame"], reg["priority"], flip)
-	await get_tree().create_timer(reg["release_time"]).timeout
-	if reg["over"]:
-		CursorManager.request(reg["cursor_id"], reg["hover_cursor"], reg["priority"], flip)
+func _release_anim(reg: FaceRegion) -> void:
+	CursorManager.request(reg.cursor_id, reg.release_frame, reg.priority, reg.flip_h)
+	await get_tree().create_timer(reg.release_time).timeout
+	if reg.over:
+		_show_hover_cursor(reg)
 	else:
-		CursorManager.release(reg["cursor_id"])
+		CursorManager.release(reg.cursor_id)

@@ -23,13 +23,12 @@ func spawn_wave(height: float) -> void:
 	wave.size   = WavePhysics.wave_size(wave.height)
 	var speed: float    = WavePhysics.wave_speed(GameManager.water_level())
 	var player_z: float = -GameManager.distance
-	var wave_inst: Node = WAVE_SCENE.instantiate()
+	var wave_inst: Wave = WAVE_SCENE.instantiate() as Wave
 	add_child(wave_inst)
-	wave_inst.call(&"setup", wave, player_z, speed)
+	wave_inst.setup(wave, player_z, speed)
 
 # Spawn a wave whose eff_h (wave_height + water_level) equals eff_h_frac * player_h.
 # Clamps wave height to [0, HEIGHT_CAP] so the category may not be reachable at depth.
 func spawn_wave_eff_frac(eff_h_frac: float) -> void:
-	var player_h: float = 1.0 if StaggerSystem.is_knocked_down else 2.0
-	var target_eff_h: float = eff_h_frac * player_h
+	var target_eff_h: float = eff_h_frac * GameManager.player_height()
 	spawn_wave(target_eff_h - GameManager.water_level())

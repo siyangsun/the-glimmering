@@ -10,7 +10,6 @@ const SPAWN_DISTANCE: float = 20.0
 const HIT_DISTANCE: float = 0.3
 
 var wave_data: WaveData
-var spawn_distance: float = SPAWN_DISTANCE
 
 var _wave_speed: float
 var _spawn_z: float
@@ -18,7 +17,6 @@ var _spawn_z: float
 func setup(data: WaveData, player_z: float, speed: float) -> void:
 	wave_data = data
 	_wave_speed = speed
-	spawn_distance = SPAWN_DISTANCE
 	_spawn_z = player_z - SPAWN_DISTANCE
 	position.z = _spawn_z
 	add_to_group(&"waves")
@@ -37,7 +35,7 @@ func dist_to_player() -> float:
 
 # Progress from 0 (just spawned) to 1 (at player).
 func t_progress() -> float:
-	return clamp((position.z - _spawn_z) / SPAWN_DISTANCE, 0.0, 1.0)
+	return clampf((position.z - _spawn_z) / SPAWN_DISTANCE, 0.0, 1.0)
 
 # Seconds until the wave reaches the player and fires the hit. INF if stalled.
 func time_to_hit() -> float:

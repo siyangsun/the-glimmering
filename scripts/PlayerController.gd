@@ -7,11 +7,6 @@ const KNOCKED_SPEED_MULT: float = 0.20  # 80% speed reduction when down
 # Linear interpolation between BASE_SPEED and this value as depth increases.
 const SUBMERGED_SPEED: float = 0.22    # m/s
 
-const STANDING_HEIGHT: float = 2.0
-const KNOCKED_HEIGHT: float = 1.0      # 50% of standing height
-
-const STANDING_CAM_Y: float = 1.7
-const KNOCKED_CAM_Y: float = 0.85
 const CAM_LERP_SPEED: float = 4.0
 
 const SWAY_AMP: float    = 0.25   # metres left/right
@@ -31,7 +26,7 @@ func _process(delta: float) -> void:
 	if not GameManager.is_playing:
 		return
 
-	if Input.is_key_pressed(KEY_SHIFT):
+	if OS.is_debug_build() and Input.is_key_pressed(KEY_SHIFT):  # dev fast-forward
 		GameManager.advance(10.0 * delta)
 	elif StaggerSystem.is_knocked_down:
 		# W stands you up when knocked down
@@ -51,10 +46,10 @@ func _process(delta: float) -> void:
 	var walking: bool = Input.is_action_pressed(&"walk_forward") and not StaggerSystem.is_knocked_down
 
 	# Camera height: base target + vertical bob while walking
-	var target_y: float = KNOCKED_CAM_Y if StaggerSystem.is_knocked_down else STANDING_CAM_Y
+	var target_y: float = GameManager.cam_height()
 	if walking:
 		target_y += sin(_sway_phase * 2.0) * BOB_AMP
-	_camera.position.y = lerp(_camera.position.y, target_y, CAM_LERP_SPEED * delta)
+	_camera.position.y = lerpf(_camera.position.y, target_y, CAM_LERP_SPEED * delta)
 
 	# Side-to-side sway and tilt while walking
 	if walking:
@@ -65,18 +60,15 @@ func _process(delta: float) -> void:
 		_camera.position.x = lerpf(_camera.position.x, 0.0, SWAY_RETURN * delta)
 		_camera.rotation.z = lerpf(_camera.rotation.z,  0.0, SWAY_RETURN * delta)
 
-func _current_height() -> float:
-	return KNOCKED_HEIGHT if StaggerSystem.is_knocked_down else STANDING_HEIGHT
-
 # Water resistance scales linearly with depth ratio (water_level / player height).
 # 0 = dry land (no drag), 1 = fully submerged (maximum drag).
 func _water_drag() -> float:
-	var depth_ratio: float = clamp(GameManager.water_level() / _current_height(), 0.0, 1.0)
+	var depth_ratio: float = clampf(GameManager.water_level() / GameManager.player_height(), 0.0, 1.0)
 	return lerpf(1.0, SUBMERGED_SPEED / BASE_SPEED, depth_ratio)
 
 func _on_wave_hit(wave_data: WaveData) -> void:
 	var effective_height: float = WavePhysics.effective_height(wave_data.height, GameManager.water_level())
-	var ratio: float = effective_height / _current_height()
+	var ratio: float = effective_height / GameManager.player_height()
 	var effective_force: float = wave_data.force * ratio
 	if Input.is_action_pressed(&"walk_forward"):
 		effective_force *= 1.1  # walking into the wave on impact

@@ -1,3 +1,4 @@
+class_name PaperBoat
 extends Node2D
 
 # A non-interactive companion that floats just ahead of the player, drawn through
@@ -66,8 +67,7 @@ func _draw() -> void:
 	var vp: Vector2 = get_viewport_rect().size
 	var focal: float      = WavePhysics.focal_length(vp.y)
 	var horizon_px: float = vp.y * WavePhysics.HORIZON_Y_FRAC
-	var cam_y: float      = 0.85 if StaggerSystem.is_knocked_down else 1.7
-	var eye_y: float      = WavePhysics.eye_height_above_water(cam_y, GameManager.water_level())
+	var eye_y: float      = WavePhysics.eye_height_above_water(GameManager.cam_height(), GameManager.water_level())
 
 	var world_y: float = sin(_phase * BOB_FREQ * TAU) * BOB_AMP
 	var lateral: float = LATERAL_OFFSET + sin(_phase * SWAY_FREQ * TAU) * SWAY_AMP

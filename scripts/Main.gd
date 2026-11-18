@@ -1,3 +1,4 @@
+class_name Main
 extends Node
 
 # ── Canvas layer stack (bottom → top) ──────────────────────────────────────────
@@ -20,6 +21,7 @@ extends Node
 #   20  debug         debug panel                                (tscn)
 #   60  menu          title screen
 #   61  lost-and-found lost-and-found screen, over the menu
+#   62  pause         Esc / P pause menu                         (PauseMenu)
 #   128 cursor        software cursor                            (CursorManager)
 const LAYER_RAIN: int            = 6
 const LAYER_BLIND: int           = 9
@@ -30,6 +32,7 @@ const LAYER_DROWN: int           = 14
 const LAYER_TOP_POSTERIZE: int   = 15
 const LAYER_MENU: int            = 60
 const LAYER_LOST_AND_FOUND: int  = 61
+const LAYER_PAUSE: int           = 62
 
 # ── Item spawning ─────────────────────────────────────────────────────────────
 # Distances from shore at which items appear (ahead of the player by SPAWN_AHEAD).
@@ -47,9 +50,11 @@ func _ready() -> void:
 	_apply_font()
 	_build_world()
 	_build_vfx()
+	var pause := PauseMenu.new()
+	pause.font = _palatino()
+	add_child(pause)
 	SignalBus.game_ended.connect(_on_game_ended)
 	SignalBus.wave_hit.connect(_on_wave_hit_flash)
-	SignalBus.game_reset.connect(_on_game_reset)
 	_show_menu()
 
 func _process(_delta: float) -> void:
@@ -71,7 +76,7 @@ func _update_paper_boat() -> void:
 	var want: bool = ItemManager.is_enabled(&"paperboat")
 	var have: bool = _paper_boat != null and is_instance_valid(_paper_boat)
 	if want and not have:
-		_paper_boat = load("res://scripts/world/PaperBoat.gd").new()
+		_paper_boat = PaperBoat.new()
 		$RenderLayer.add_child(_paper_boat)
 	elif not want and have:
 		_paper_boat.queue_free()
@@ -107,10 +112,10 @@ func _spawn_item_at(shore_dist: float) -> void:
 	var id: StringName = ItemManager.pick_for_spawn()
 	if id == &"":
 		return
-	var item: Node2D = load("res://scripts/world/FloatingItem.gd").new()
-	item.set("item_id", id)
-	item.set("distance_from_shore", shore_dist)
-	item.set("lateral", randf_range(-1.5, 1.5))
+	var item := FloatingItem.new()
+	item.item_id = id
+	item.distance_from_shore = shore_dist
+	item.lateral = randf_range(-1.5, 1.5)
 	# Draw on the ocean render layer, above WaveRenderer2D so it sits on the water.
 	$RenderLayer.add_child(item)
 	_active_items.append(item)
@@ -209,12 +214,7 @@ func _on_go_to_ocean() -> void:
 		_menu_layer = null
 	_clear_items()
 	_generate_spawn_distances()
-	DrownMeter.reset()
-	StaggerSystem.reset()
-	ImpairmentSystem.reset()
-	AudioManager.reset()
-	AudioManager.fade_out_elegy(0.5)
-	GameManager.reset()
+	GameManager.reset()  # each system resets itself on SignalBus.game_reset
 
 func _make_menu_button(txt: String, font: Font) -> Button:
 	var btn := Button.new()
@@ -385,15 +385,11 @@ func _on_game_ended(ending: StringName) -> void:
 		AudioManager.play_elegy_loop()
 	_show_menu(msg, Endings.epitaph_for(ending))
 
-func _on_game_reset() -> void:
-	pass  # item spawning is re-seeded in _on_go_to_ocean
-
 # ── VFX & world ───────────────────────────────────────────────────────────────
 
 func _on_wave_hit_flash(wave_data: WaveData) -> void:
 	var eff_h: float = WavePhysics.effective_height(wave_data.height, GameManager.water_level())
-	var player_h: float = 1.0 if StaggerSystem.is_knocked_down else 2.0
-	if WavePhysics.wave_category(eff_h, player_h) < 2:
+	if WavePhysics.wave_category(eff_h, GameManager.player_height()) < 2:
 		return
 	if not _flash_rect:
 		return

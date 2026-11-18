@@ -1,3 +1,4 @@
+class_name FloatingItem
 extends Node2D
 
 # Rendered through the same 2D perspective projection as the ocean (WavePhysics),
@@ -61,8 +62,7 @@ func _process(delta: float) -> void:
 	var vp: Vector2 = get_viewport_rect().size
 	var focal: float      = WavePhysics.focal_length(vp.y)
 	var horizon_px: float = vp.y * WavePhysics.HORIZON_Y_FRAC
-	var cam_y: float      = 0.85 if StaggerSystem.is_knocked_down else 1.7
-	var eye_y: float      = WavePhysics.eye_height_above_water(cam_y, GameManager.water_level())
+	var eye_y: float      = WavePhysics.eye_height_above_water(GameManager.cam_height(), GameManager.water_level())
 
 	var world_y: float = sin(_bob_phase) * BOB_AMP
 	var sy: float = WavePhysics.project_screen_y(world_y, dist, eye_y, horizon_px, focal)

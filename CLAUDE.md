@@ -10,6 +10,7 @@ See `brainstorm.md` for design intent; `architecture.md` for system layout.
 
 ## Engine & Language
 - Godot 4.7.1, GDScript
+- Renderer: GL Compatibility (all visuals are 2D canvas; shaders are canvas_item + screen texture)
 - 3D scene, CanvasLayer overlays for wave visual and impairment effects
 - No physics body needed for player — just a Node3D with Camera3D
 

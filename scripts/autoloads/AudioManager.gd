@@ -55,7 +55,6 @@ var _plunged:   Array[AudioStream]
 var _coffin:    Array[AudioStream]
 var _wetcoffin: Array[AudioStream]
 
-var _knocked_down: bool = false  # mirrored from SignalBus to avoid cross-autoload ref
 var _ambience_player: AudioStreamPlayer
 var _elegy_player: AudioStreamPlayer = null
 var _rub_eyes_player: AudioStreamPlayer = null
@@ -101,7 +100,7 @@ var _gurgle_timer: float         = 0.0
 var _prev_drown: float           = 0.0
 var _was_high_drown: bool        = false
 
-# ── Ambient stingers — gulls / lighthouse gong every 5-15 s ─────────────────
+# ── Ambient stingers — gulls / lighthouse gong every 15-30 s ─────────────────
 const _AMBIENT_INTERVAL_MIN: float = 15.0
 const _AMBIENT_INTERVAL_MAX: float = 30.0
 const _GULLS_GAIN_OFFSET: float    =  -4.4  # 40% quieter in amplitude
@@ -122,9 +121,8 @@ func _ready() -> void:
 	_coffin    = [_COFFIN_1, _COFFIN_2, _COFFIN_3]
 	_wetcoffin = [_WETCOFFIN_1, _WETCOFFIN_2, _WETCOFFIN_3]
 	SignalBus.wave_hit.connect(_on_wave_hit)
-	SignalBus.knocked_down.connect(func() -> void: _knocked_down = true)
-	SignalBus.stood_up.connect(func() -> void: _knocked_down = false)
 	SignalBus.impairment_changed.connect(_on_impairment_changed)
+	SignalBus.game_reset.connect(reset)
 	_setup_ear_filter()
 	_start_waves_ambience()
 	_start_wetwalking()
@@ -193,13 +191,13 @@ func _process(delta: float) -> void:
 # ── Public play methods ─────────────────────────────────────────────────────
 
 func play_wave_hit(wave_data: WaveData) -> void:
-	var player_h: float = 1.0 if _knocked_down else 2.0
-	var eff_h: float    = wave_data.height + GameManager.water_level()
+	var player_h: float = GameManager.player_height()
+	var eff_h: float    = WavePhysics.effective_height(wave_data.height, GameManager.water_level())
 	var stream: AudioStream = _WAVE_HIT_UNDERWATER if eff_h >= player_h else _WAVE_HIT_1
 
 	# Volume scales with force * relative height, floored at 0.
 	# sqrt gives perceptual linearity: small waves are quiet but audible.
-	var intensity: float    = clamp(wave_data.force * (eff_h / player_h) / _WAVE_MAX_INTENSITY, 0.0, 1.0)
+	var intensity: float    = clampf(wave_data.force * (eff_h / player_h) / _WAVE_MAX_INTENSITY, 0.0, 1.0)
 	var volume_db: float    = gain_waves + linear_to_db(maxf(sqrt(intensity), 0.0001))
 	_play(stream, volume_db, true)
 
@@ -294,6 +292,7 @@ func fade_out_elegy(duration: float) -> void:
 	tween.tween_callback(p.queue_free)
 
 func reset() -> void:
+	fade_out_elegy(0.5)
 	_prev_drown       = 0.0
 	_was_high_drown   = false
 	_gurgle_timer     = 0.0
@@ -310,8 +309,8 @@ func reset() -> void:
 
 func _on_wave_hit(wave_data: WaveData) -> void:
 	play_wave_hit(wave_data)
-	var player_h: float = 1.0 if _knocked_down else 2.0
-	var eff_h: float    = wave_data.height + GameManager.water_level()
+	var player_h: float = GameManager.player_height()
+	var eff_h: float    = WavePhysics.effective_height(wave_data.height, GameManager.water_level())
 	if eff_h >= player_h:
 		play_impairment_plunged()
 
@@ -402,7 +401,7 @@ func _update_gurgling(delta: float) -> void:
 	_gurgling_player.volume_db = _gurgling_vol
 
 func _update_wetwalking(delta: float) -> void:
-	var walking: bool = Input.is_action_pressed(&"walk_forward") and not _knocked_down
+	var walking: bool = Input.is_action_pressed(&"walk_forward") and not StaggerSystem.is_knocked_down
 	var target_vol: float = gain_wetwalking if walking else -80.0
 	if _wetwalking_vol < target_vol:
 		_wetwalking_vol = minf(_wetwalking_vol + _WETWALKING_FADE_RATE * delta, target_vol)
@@ -441,7 +440,7 @@ func _setup_ear_filter() -> void:
 	AudioServer.add_bus_effect(plunge, ppan)
 	_plunge_pan_idx = AudioServer.get_bus_effect_count(plunge) - 1
 
-func _on_impairment_changed(type: StringName, state: bool) -> void:
+func _on_impairment_changed(type: StringName, _state: bool) -> void:
 	if type == &"left_ear" or type == &"right_ear":
 		_update_ear_filter()
 		_update_ear_plunge()

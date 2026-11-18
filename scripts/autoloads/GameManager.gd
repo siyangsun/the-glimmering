@@ -7,6 +7,12 @@ const ARRIVAL_DELAY: float = 11.0   # seconds after crossing 100m before ending
 # Pocket stones drag you down: full depth is reached this near shore, then holds.
 const STONES_DEPTH_DISTANCE: float = 50.0
 
+# Player/camera heights (metres) — single source of truth for everything that cares.
+const STANDING_HEIGHT: float = 2.0
+const KNOCKED_HEIGHT: float = 1.0
+const STANDING_CAM_Y: float = 1.7
+const KNOCKED_CAM_Y: float = 0.85
+
 var distance: float = 0.0
 var is_playing: bool = false
 var run_count: int = 0
@@ -33,9 +39,14 @@ func water_level() -> float:
 	var ramp: float = STONES_DEPTH_DISTANCE if ItemManager.is_enabled(&"pocketstones") else GOAL_DISTANCE
 	return minf((distance / ramp) * WATER_LEVEL_MAX, WATER_LEVEL_MAX)
 
+func player_height() -> float:
+	return KNOCKED_HEIGHT if StaggerSystem.is_knocked_down else STANDING_HEIGHT
+
+func cam_height() -> float:
+	return KNOCKED_CAM_Y if StaggerSystem.is_knocked_down else STANDING_CAM_Y
+
 func unsubmerged_height() -> float:
-	var player_h: float = 1.0 if StaggerSystem.is_knocked_down else 2.0
-	return maxf(player_h - water_level(), 0.1)
+	return maxf(player_height() - water_level(), 0.1)
 
 func advance(amount: float) -> void:
 	if not is_playing:
@@ -45,7 +56,7 @@ func advance(amount: float) -> void:
 func apply_knockback(amount: float) -> void:
 	if not is_playing:
 		return
-	distance = max(0.0, distance - amount * KNOCKBACK_SCALE)
+	distance = maxf(0.0, distance - amount * KNOCKBACK_SCALE)
 
 func _on_game_ended(ending: StringName) -> void:
 	if not is_playing:

@@ -66,8 +66,8 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	process_priority = 1000  # after everything else, so we read the final mouse pos
 
-	for name: StringName in _SPRITES:
-		_textures[name] = load(_SPRITES[name])
+	for key: StringName in _SPRITES:
+		_textures[key] = load(_SPRITES[key])
 
 	var layer := CanvasLayer.new()
 	layer.layer = 128

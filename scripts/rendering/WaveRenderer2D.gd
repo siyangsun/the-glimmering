@@ -136,10 +136,10 @@ func _draw() -> void:
 
 	var waves: Array = get_tree().get_nodes_in_group(&"waves")
 	waves.sort_custom(func(a: Node, b: Node) -> bool:
-		return a.dist_to_player() > b.dist_to_player()
+		return (a as Wave).dist_to_player() > (b as Wave).dist_to_player()
 	)
-	for w in waves:
-		_draw_wave(w, vw, vh, focal, horizon_px, eye_y)
+	for w: Node in waves:
+		_draw_wave(w as Wave, vw, vh, focal, horizon_px, eye_y)
 
 	for b in _splash_blobs:
 		draw_circle(Vector2(b["px"], b["py"]), b["r"],
@@ -156,7 +156,7 @@ func _draw_water_surface(vw: float, vh: float, horizon_px: float, eye_y: float) 
 
 	# Depth-based warp: as water rises, near-horizon strips compress more.
 	# compress_deep: how narrow top-of-water UV is at full submersion.
-	var water_ratio: float = clamp(GameManager.water_level() / 1.7, 0.0, 1.0)
+	var water_ratio: float = clampf(GameManager.water_level() / GameManager.STANDING_CAM_Y, 0.0, 1.0)
 
 	for i in range(N_STRIPS):
 		var t0: float = float(i)     / float(N_STRIPS)
@@ -205,7 +205,7 @@ func _draw_water_surface(vw: float, vh: float, horizon_px: float, eye_y: float) 
 
 # ── Waves ────────────────────────────────────────────────────────────────────
 
-func _draw_wave(wave: Node, vw: float, vh: float, focal: float,
+func _draw_wave(wave: Wave, vw: float, vh: float, focal: float,
 		horizon_px: float, eye_y: float) -> void:
 	var dist: float  = wave.dist_to_player()
 	if dist < 0.1:
@@ -214,7 +214,7 @@ func _draw_wave(wave: Node, vw: float, vh: float, focal: float,
 	var t: float     = wave.t_progress()   # cosmetics only: haze fade + foam timing
 	var eff_h: float = wave.eff_height()
 
-	var player_h: float = 1.0 if StaggerSystem.is_knocked_down else 2.0
+	var player_h: float = GameManager.player_height()
 
 	# Wave is a full-width wall on the waterline; both edges from one projection.
 	# eff_h - water_level == wave.wave_data.height (crest above still water).
@@ -350,5 +350,4 @@ func _draw_ripples(vw: float, focal: float, horizon_px: float, eye_y: float) -> 
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _eye_height() -> float:
-	var cam_y: float = 0.85 if StaggerSystem.is_knocked_down else 1.7
-	return WavePhysics.eye_height_above_water(cam_y, GameManager.water_level())
+	return WavePhysics.eye_height_above_water(GameManager.cam_height(), GameManager.water_level())

@@ -32,6 +32,9 @@ var nose_impaired: bool = false
 func _ready() -> void:
 	SignalBus.wave_hit.connect(_on_wave_hit)
 	SignalBus.action_performed.connect(_on_action_performed)
+	SignalBus.action_held_changed.connect(_on_action_held_changed)
+	SignalBus.action_hovered.connect(_on_action_hovered)
+	SignalBus.game_reset.connect(reset)
 
 func _process(delta: float) -> void:
 	if eyes_wiping and eyes_value > 0.0:
@@ -45,17 +48,16 @@ func get_speed_modifier() -> float:
 
 func reset() -> void:
 	eyes_value = 0.0
-	eyes_shielded = false
-	eyes_wiping = false
-	nose_shielded = false
+	# eyes_shielded / eyes_wiping / nose_shielded mirror live mouse input, not run
+	# state, so they deliberately survive a reset.
 	_set_impairment(&"left_ear", false)
 	_set_impairment(&"right_ear", false)
 	_set_impairment(&"nose", false)
 
 func _on_wave_hit(wave_data: WaveData) -> void:
-	var player_h: float = 1.0 if StaggerSystem.is_knocked_down else 2.0
+	var player_h: float = GameManager.player_height()
 	var unsubmerged_h: float = GameManager.unsubmerged_height()
-	var effective_height: float = wave_data.height + GameManager.water_level()
+	var effective_height: float = WavePhysics.effective_height(wave_data.height, GameManager.water_level())
 
 	if wave_data.height >= 0.5 * unsubmerged_h:
 		var goggle_factor: float = 0.1 if ItemManager.is_enabled(&"goggles") else 1.0
@@ -82,6 +84,15 @@ func _on_action_performed(action: StringName) -> void:
 		&"clear_ears":
 			_set_impairment(&"left_ear", false)
 			_set_impairment(&"right_ear", false)
+
+func _on_action_held_changed(action: StringName, held: bool) -> void:
+	match action:
+		&"wipe_eyes": eyes_wiping = held
+		&"blow_nose": nose_shielded = held
+
+func _on_action_hovered(action: StringName, over: bool) -> void:
+	if action == &"wipe_eyes":
+		eyes_shielded = over
 
 func _set_impairment(type: StringName, state: bool) -> void:
 	match type:

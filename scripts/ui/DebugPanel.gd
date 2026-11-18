@@ -9,6 +9,9 @@ var _wave_btns: Array[Button] = []
 var _item_panel: Control = null
 
 func _ready() -> void:
+	if not OS.is_debug_build():
+		queue_free()
+		return
 	SignalBus.wave_hit.connect(_on_wave_hit)
 	_label.add_theme_font_size_override(&"font_size", 14)
 	_label.visible = false
@@ -41,7 +44,7 @@ func _on_toggle() -> void:
 	queue_redraw()
 
 func _on_wave_hit(data: WaveData) -> void:
-	_max_wave_h = maxf(_max_wave_h, data.height + GameManager.water_level())
+	_max_wave_h = maxf(_max_wave_h, WavePhysics.effective_height(data.height, GameManager.water_level()))
 
 func _process(_delta: float) -> void:
 	if not _expanded:
@@ -180,8 +183,8 @@ func _spawn_item_debug(id: StringName) -> void:
 	if not render_layer:
 		return
 	var dist: float = GameManager.distance + 5.0
-	var item: Node2D = load("res://scripts/world/FloatingItem.gd").new()
-	item.set("item_id", id)
-	item.set("distance_from_shore", dist)
-	item.set("lateral", randf_range(-1.5, 1.5))
+	var item := FloatingItem.new()
+	item.item_id = id
+	item.distance_from_shore = dist
+	item.lateral = randf_range(-1.5, 1.5)
 	render_layer.add_child(item)

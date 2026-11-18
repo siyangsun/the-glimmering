@@ -18,7 +18,7 @@ func _update_font_size() -> void:
 
 func _process(_delta: float) -> void:
 	var d: float = GameManager.distance
-	var dist_rounded: int = int(d) if d < 10.0 else (int(d) / 10) * 10
+	var dist_rounded: int = int(d) if d < 10.0 else floori(d / 10.0) * 10
 	var knocked: String = "\n[KNOCKED DOWN — W to stand]" if StaggerSystem.is_knocked_down else ""
 	_label.text = (
 		"%d meters from shore%s\n\n"

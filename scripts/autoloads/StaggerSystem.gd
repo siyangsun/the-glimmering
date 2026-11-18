@@ -9,12 +9,12 @@ var is_knocked_down: bool = false
 func _process(delta: float) -> void:
 	if not GameManager.is_playing or is_knocked_down:
 		return
-	value = max(value - STAGGER_DRAIN_RATE * delta, 0.0)
+	value = maxf(value - STAGGER_DRAIN_RATE * delta, 0.0)
 
 func add_stagger(effective_force: float) -> void:
 	if is_knocked_down:
 		return
-	value = min(value + effective_force * STAGGER_PER_FORCE, 1.0)
+	value = minf(value + effective_force * STAGGER_PER_FORCE, 1.0)
 	if value >= 1.0:
 		_knock_down()
 
@@ -22,6 +22,9 @@ func stand_up() -> void:
 	is_knocked_down = false
 	value = 0.0
 	SignalBus.stood_up.emit()
+
+func _ready() -> void:
+	SignalBus.game_reset.connect(reset)
 
 func reset() -> void:
 	value = 0.0

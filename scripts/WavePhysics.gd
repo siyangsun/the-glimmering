@@ -16,17 +16,17 @@ const FORCE_PER_METRE: float = 2.5
 const MIN_INTERVAL: float = 1.5      # s — hard floor on inter-arrival time
 
 static func wave_speed(water_depth: float) -> float:
-	return sqrt(GRAVITY * max(water_depth, MIN_DEPTH))
+	return sqrt(GRAVITY * maxf(water_depth, MIN_DEPTH))
 
 static func encounter_period(water_depth: float, player_speed: float) -> float:
 	return NATURAL_PERIOD / (1.0 + player_speed / wave_speed(water_depth))
 
 static func next_interval(water_depth: float, player_speed: float) -> float:
 	var ep: float = encounter_period(water_depth, player_speed)
-	return max(-ep * log(clamp(randf(), 0.0001, 0.9999)), MIN_INTERVAL)
+	return maxf(-ep * log(clampf(randf(), 0.0001, 0.9999)), MIN_INTERVAL)
 
 static func rayleigh_height() -> float:
-	return min(RAYLEIGH_SIGMA * sqrt(-2.0 * log(clamp(randf(), 0.0001, 0.9999))), HEIGHT_CAP)
+	return minf(RAYLEIGH_SIGMA * sqrt(-2.0 * log(clampf(randf(), 0.0001, 0.9999))), HEIGHT_CAP)
 
 static func effective_height(wave_height: float, water_level: float) -> float:
 	return wave_height + water_level
@@ -35,7 +35,7 @@ static func wave_force(wave_height: float) -> float:
 	return FORCE_BASE + wave_height * FORCE_PER_METRE
 
 static func wave_size(wave_height: float) -> float:
-	return clamp(wave_height / HEIGHT_CAP, 0.0, 1.0)
+	return clampf(wave_height / HEIGHT_CAP, 0.0, 1.0)
 
 # ── 2D perspective projection ───────────────────────────────────────────────
 
