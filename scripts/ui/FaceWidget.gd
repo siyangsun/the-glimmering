@@ -101,7 +101,7 @@ func _ready() -> void:
 	_eyes_reg.release_frame = &"fists2"
 	_eyes_reg.release_time = 0.07
 
-	_nose_reg = FaceRegion.new(&"face_nose", &"blow_nose", &"reach")
+	_nose_reg = FaceRegion.new(&"face_nose", &"blow_nose", &"pinch")
 	_nose_reg.click_frames = [&"pinch", &"pinch2"]
 	_nose_reg.click_times = [0.07, 0.10]
 	_nose_reg.hold_frames = [&"pinch", &"pinch2"]
