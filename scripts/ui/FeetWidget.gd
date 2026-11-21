@@ -1,18 +1,19 @@
 extends Control
 
-## Bottom-left feet, resting on foot1. Hover brightens them; clicking plays foot0-5 per foot
-## (left, then right starting just before left finishes) while holding walk_forward,
-## so it walks exactly like W. Holding the mouse keeps stepping, with blank frames
-## between a foot's foot5 and its next foot0; releasing snaps back to foot1.
+## Bottom-left feet, resting on foot1. Holding the mouse on them presses walk_forward,
+## so it walks exactly like W. Whenever walk_forward is held (mouse or W) the feet play
+## Gait loop per foot: foot0 ball lands, foot1 planted (held), foot2-5 lifting off,
+## then empty while it swings through the air. The other foot lands just as this one
+## starts lifting (half a cycle apart). Not walking (or letting go) shows foot1.
 
 const FOOT_SCALE: float = 4.0
 const CORNER_MARGIN: Vector2 = Vector2(-20.0, 28.0)
 const FOOT_GAP: float = -110.0        # screen pixels between the two feet (negative overlaps transparent padding)
 const FRAME_TIME: float = 0.1         # seconds per foot frame
-const OVERLAP: int = 2                # frames the next foot starts before the previous finishes
-# Each foot's cycle: 6 step frames, then blanks until its next turn (6 - 2*OVERLAP blanks).
-const _STRIDE: int = 6 - OVERLAP      # frames between one foot starting and the other starting
-const _CYCLE: int = _STRIDE * 2
+const FOOT1_HOLD: int = 7            # frames planted on foot1 (>= 4); sets the pace
+const _STEP: int = 6 - 1 + FOOT1_HOLD  # visible frames: foot0, foot1 x FOOT1_HOLD, foot2-5
+const _STRIDE: int = 1 + FOOT1_HOLD    # half cycle: other foot lands as this one shows foot2
+const _CYCLE: int = _STRIDE * 2        # leaves FOOT1_HOLD - 3 empty (swing) frames per foot
 const HOVER_TINT: Color = Color(1.3, 1.3, 1.3)
 
 const _FOOT_PX: Vector2 = Vector2(64.0, 68.0)
@@ -22,7 +23,8 @@ var _left: TextureRect
 var _right: TextureRect
 var _region: Rect2 = Rect2()
 var _over: bool = false
-var _walking: bool = false
+var _mouse_walking: bool = false  # we pressed walk_forward on the mouse's behalf
+var _walk_time: float = _STRIDE * FRAME_TIME
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -56,6 +58,8 @@ func _set_over(over: bool) -> void:
 	if over == _over:
 		return
 	_over = over
+	if not over:
+		_set_mouse_walking(false)
 	if over:
 		CursorManager.request(&"feet", &"none", 20)
 	else:
@@ -64,31 +68,42 @@ func _set_over(over: bool) -> void:
 	_left.modulate = tint
 	_right.modulate = tint
 
+func _set_mouse_walking(on: bool) -> void:
+	if on == _mouse_walking:
+		return
+	_mouse_walking = on
+	if on:
+		Input.action_press(&"walk_forward")
+	else:
+		Input.action_release(&"walk_forward")
+
+# Feet vanish while knocked down; the area stays clickable to stand back up.
+func _process(delta: float) -> void:
+	visible = not StaggerSystem.is_knocked_down
+	if _mouse_walking and (not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or not GameManager.is_playing):
+		_set_mouse_walking(false)  # release we never saw (outside window, paused)
+	if not GameManager.is_playing or not Input.is_action_pressed(&"walk_forward"):
+		# Start mid-gait (left lifting, right landing) so motion begins at once,
+		# not with the left foot sitting planted on foot1.
+		_walk_time = _STRIDE * FRAME_TIME
+		_left.texture = _frames[1]
+		_right.texture = _frames[1]
+		return
+	var f: int = int(_walk_time / FRAME_TIME)
+	_walk_time += delta
+	_left.texture = _cycle_frame(f)
+	_right.texture = _cycle_frame(f - _STRIDE)
+
+func _cycle_frame(f: int) -> Texture2D:
+	var i: int = posmod(f, _CYCLE)
+	if i >= _STEP:
+		return null  # empty frame
+	return _frames[clampi(i - FOOT1_HOLD + 1, 1, 5)] if i > 0 else _frames[0]
+
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		_set_over(_region.has_point((event as InputEventMouseMotion).position))
 	elif event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
-		if mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed and _over and GameManager.is_playing:
-			_walk()
-
-func _walk() -> void:
-	if _walking:
-		return
-	_walking = true
-	Input.action_press(&"walk_forward")
-	var t: int = 0
-	# A click plays at least one step per foot; after that, keep going only while held.
-	while GameManager.is_playing and (t < _STRIDE + 6 or (_over and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT))):
-		_left.texture = _cycle_frame(t)
-		_right.texture = _cycle_frame(t - _STRIDE) if t >= _STRIDE else _frames[1]
-		t += 1
-		await get_tree().create_timer(FRAME_TIME).timeout
-	_left.texture = _frames[1]
-	_right.texture = _frames[1]
-	Input.action_release(&"walk_forward")
-	_walking = false
-
-func _cycle_frame(t: int) -> Texture2D:
-	var i: int = t % _CYCLE
-	return _frames[i] if i < _frames.size() else null  # null = blank frame
+		if mb.button_index == MOUSE_BUTTON_LEFT:
+			_set_mouse_walking(mb.pressed and _over and GameManager.is_playing)
