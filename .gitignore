@@ -1,3 +1,4 @@
 .godot/
 .claude/
 *.uid
+build/

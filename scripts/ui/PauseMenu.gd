@@ -50,7 +50,13 @@ func _build() -> void:
 	box.add_child(title)
 
 	box.add_child(_button("resume", func() -> void: _set_paused(false)))
-	box.add_child(_button("quit", func() -> void: get_tree().quit()))
+	box.add_child(_button("fullscreen", _toggle_fullscreen))
+	if not OS.has_feature("web"):  # quit() just kills the canvas in a browser
+		box.add_child(_button("quit", func() -> void: get_tree().quit()))
+
+func _toggle_fullscreen() -> void:
+	var full: bool = DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if full else DisplayServer.WINDOW_MODE_FULLSCREEN)
 
 func _button(text: String, on_press: Callable) -> Button:
 	var btn := Button.new()
