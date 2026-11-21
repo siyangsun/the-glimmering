@@ -5,6 +5,8 @@ extends CanvasLayer
 ## tree (waves, audio, tweens); this node and CursorManager keep running.
 
 var font: Font = null  # set by Main before this enters the tree
+var _menu: Control
+var _licenses: Control
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -41,6 +43,8 @@ func _build() -> void:
 	box.add_theme_constant_override(&"separation", 24)
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
 	add_child(box)
+	_menu = box
+	_build_licenses()
 
 	var title := Label.new()
 	title.text = "the sea waits."
@@ -51,6 +55,7 @@ func _build() -> void:
 
 	box.add_child(_button("resume", func() -> void: _set_paused(false)))
 	box.add_child(_button("fullscreen", _toggle_fullscreen))
+	box.add_child(_button("licenses", func() -> void: _show_licenses(true)))
 	if not OS.has_feature("web"):  # quit() just kills the canvas in a browser
 		box.add_child(_button("quit", func() -> void: get_tree().quit()))
 
@@ -66,3 +71,31 @@ func _button(text: String, on_press: Callable) -> Button:
 	btn.add_theme_font_size_override(&"font_size", 20)
 	btn.pressed.connect(on_press)
 	return btn
+
+## Godot is MIT: the notice must ship with the game. Full text incl. third-party notices: web/LICENSES.txt.
+func _build_licenses() -> void:
+	var panel := VBoxContainer.new()
+	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	panel.offset_left = 120.0
+	panel.offset_right = -120.0
+	panel.offset_top = 80.0
+	panel.offset_bottom = -80.0
+	panel.add_theme_constant_override(&"separation", 24)
+	panel.visible = false
+	add_child(panel)
+	_licenses = panel
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	panel.add_child(scroll)
+	var text := Label.new()
+	text.text = FileAccess.get_file_as_string("res://web/LICENSES.txt")  # packed via export include_filter
+	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text.add_theme_font_size_override(&"font_size", 16)
+	scroll.add_child(text)
+	panel.add_child(_button("back", func() -> void: _show_licenses(false)))
+
+func _show_licenses(on: bool) -> void:
+	_licenses.visible = on
+	_menu.visible = not on
