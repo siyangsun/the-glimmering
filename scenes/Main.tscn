@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://daaqu65lf8smc"]
+[gd_scene load_steps=12 format=3 uid="uid://daaqu65lf8smc"]
 
 [ext_resource type="Script" path="res://scripts/Main.gd" id="1_main0"]
 [ext_resource type="Script" path="res://scripts/PlayerController.gd" id="2_plyr0"]
@@ -9,6 +9,7 @@
 [ext_resource type="Shader" path="res://assets/shaders/post_process.gdshader" id="7_post0"]
 [ext_resource type="Script" path="res://scripts/rendering/PostProcess.gd" id="8_pps0"]
 [ext_resource type="Script" path="res://scripts/ui/FaceWidget.gd" id="9_face0"]
+[ext_resource type="Script" path="res://scripts/ui/FeetWidget.gd" id="10_feet0"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_pp"]
 shader = ExtResource("7_post0")
@@ -67,6 +68,15 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("9_face0")
+
+[node name="FeetWidget" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("10_feet0")
 
 [node name="DebugLayer" type="CanvasLayer" parent="."]
 layer = 20

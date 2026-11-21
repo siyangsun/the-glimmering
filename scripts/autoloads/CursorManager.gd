@@ -138,7 +138,7 @@ func _apply() -> void:
 	_active = want
 	_active_flip = want_flip
 	_sprite.flip_h = want_flip
-	_sprite.texture = _textures[want]
+	_sprite.texture = _textures.get(want)  # unknown name (e.g. &"none") hides the cursor
 
 func _resolve() -> StringName:
 	if _drowned:
