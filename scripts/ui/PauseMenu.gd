@@ -6,7 +6,10 @@ extends CanvasLayer
 
 var font: Font = null  # set by Main before this enters the tree
 var _menu: Control
-var _licenses: Control
+var _credits: Control
+var _short: Control
+var _full: Control
+var _more_btn: Control
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -44,7 +47,7 @@ func _build() -> void:
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
 	add_child(box)
 	_menu = box
-	_build_licenses()
+	_build_credits()
 
 	var title := Label.new()
 	title.text = "the sea waits."
@@ -55,7 +58,7 @@ func _build() -> void:
 
 	box.add_child(_button("resume", func() -> void: _set_paused(false)))
 	box.add_child(_button("fullscreen", _toggle_fullscreen))
-	box.add_child(_button("licenses", func() -> void: _show_licenses(true)))
+	box.add_child(_button("credits", func() -> void: _show_credits(true)))
 	if not OS.has_feature("web"):  # quit() just kills the canvas in a browser
 		box.add_child(_button("quit", func() -> void: get_tree().quit()))
 
@@ -72,8 +75,9 @@ func _button(text: String, on_press: Callable) -> Button:
 	btn.pressed.connect(on_press)
 	return btn
 
-## Godot is MIT: the notice must ship with the game. Full text incl. third-party notices: web/LICENSES.txt.
-func _build_licenses() -> void:
+## Godot is MIT: the notice must ship with the game. Short credit first, full text
+## (incl. third-party notices, packed from web/LICENSES.txt) one click deeper.
+func _build_credits() -> void:
 	var panel := VBoxContainer.new()
 	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
 	panel.offset_left = 120.0
@@ -83,10 +87,21 @@ func _build_licenses() -> void:
 	panel.add_theme_constant_override(&"separation", 24)
 	panel.visible = false
 	add_child(panel)
-	_licenses = panel
+	_credits = panel
+
+	var short := Label.new()
+	short.text = "made with the Godot Engine\ngodotengine.org\n\nCopyright (c) 2014-present Godot Engine contributors\nCopyright (c) 2007-2014 Juan Linietsky, Ariel Manzur\nMIT license"
+	short.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	short.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	short.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	short.add_theme_font_override(&"font", font)
+	short.add_theme_font_size_override(&"font_size", 20)
+	panel.add_child(short)
+	_short = short
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.visible = false
 	panel.add_child(scroll)
 	var text := Label.new()
 	text.text = FileAccess.get_file_as_string("res://web/LICENSES.txt")  # packed via export include_filter
@@ -94,8 +109,27 @@ func _build_licenses() -> void:
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	text.add_theme_font_size_override(&"font_size", 16)
 	scroll.add_child(text)
-	panel.add_child(_button("back", func() -> void: _show_licenses(false)))
+	_full = scroll
 
-func _show_licenses(on: bool) -> void:
-	_licenses.visible = on
+	var more := _button("full license text", func() -> void: _show_full(true))
+	more.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	panel.add_child(more)
+	var back := _button("back", _on_credits_back)
+	back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	panel.add_child(back)
+	_more_btn = more
+
+func _show_credits(on: bool) -> void:
+	_credits.visible = on
 	_menu.visible = not on
+
+func _show_full(on: bool) -> void:
+	_full.visible = on
+	_short.visible = not on
+	_more_btn.visible = not on
+
+func _on_credits_back() -> void:
+	if _full.visible:
+		_show_full(false)
+	else:
+		_show_credits(false)

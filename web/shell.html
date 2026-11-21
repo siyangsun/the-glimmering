@@ -15,12 +15,6 @@ body { background: #000; overflow: hidden; touch-action: none; }
 	visibility: hidden; transition: opacity 1.2s ease;
 }
 #status.done { opacity: 0; }
-#status-text {
-	font-family: Georgia, 'Times New Roman', serif; font-style: italic;
-	color: #6f7f86; font-size: 1.15rem; letter-spacing: .08em;
-	animation: breathe 5s ease-in-out infinite;
-}
-@keyframes breathe { 0%,100% { opacity: .25; } 50% { opacity: .9; } }
 #status-bar { width: min(240px, 50vw); height: 1px; background: #1b2226; }
 #status-fill { height: 100%; width: 0; background: #6f7f86; transition: width .4s ease-out; }
 #status-notice {
@@ -40,7 +34,6 @@ body { background: #000; overflow: hidden; touch-action: none; }
 		</noscript>
 
 		<div id="status">
-			<div id="status-text">the sea waits.</div>
 			<div id="status-bar"><div id="status-fill"></div></div>
 			<div id="status-notice"></div>
 		</div>
@@ -55,7 +48,6 @@ const engine = new Engine(GODOT_CONFIG);
 	const statusOverlay = document.getElementById('status');
 	const statusFill = document.getElementById('status-fill');
 	const statusBar = document.getElementById('status-bar');
-	const statusText = document.getElementById('status-text');
 	const statusNotice = document.getElementById('status-notice');
 
 	let initializing = true;
@@ -72,7 +64,7 @@ const engine = new Engine(GODOT_CONFIG);
 			return;
 		}
 		statusOverlay.style.visibility = 'visible';
-		statusBar.style.display = statusText.style.display = mode === 'progress' ? 'block' : 'none';
+		statusBar.style.display = mode === 'progress' ? 'block' : 'none';
 		statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
 		statusMode = mode;
 	}
