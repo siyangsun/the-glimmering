@@ -5,13 +5,12 @@ const _WOBBLE_START: float = 0.50  # eyes_value fraction where wobble begins
 func _ready() -> void:
 	color = Color.TRANSPARENT
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var mat := ShaderMaterial.new()
 	mat.shader = preload("res://assets/shaders/blind_overlay.gdshader")
 	material = mat
 
 func _process(_delta: float) -> void:
-	position = Vector2.ZERO
-	size = get_viewport_rect().size
 	var eyes_pct: float = ImpairmentSystem.eyes_value / ImpairmentSystem.EYE_MAX
 	# 0 below 50%, ramps to 1.0 at full blindness
 	var amount: float = clampf((eyes_pct - _WOBBLE_START) / (1.0 - _WOBBLE_START), 0.0, 1.0)

@@ -7,6 +7,3 @@ signal action_held_changed(action: StringName, held: bool)   # mouse held down o
 signal action_hovered(action: StringName, over: bool)        # cursor entered/left a region
 signal game_ended(ending: StringName)
 signal game_reset
-signal knocked_down
-signal stood_up
-signal item_collected(id: StringName)

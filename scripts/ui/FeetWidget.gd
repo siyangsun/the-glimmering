@@ -10,10 +10,11 @@ const FOOT_SCALE: float = 4.0
 const CORNER_MARGIN: Vector2 = Vector2(-20.0, 28.0)
 const FOOT_GAP: float = -110.0        # screen pixels between the two feet (negative overlaps transparent padding)
 const FRAME_TIME: float = 0.1         # seconds per foot frame
-const FOOT1_HOLD: int = 7            # frames planted on foot1 (>= 4); sets the pace
+const FOOT1_HOLD: int = 5            # frames planted on foot1 (>= 1)
+const EMPTY_FRAMES: int = 3          # frames with no foot while it swings through the air
 const _STEP: int = 6 - 1 + FOOT1_HOLD  # visible frames: foot0, foot1 x FOOT1_HOLD, foot2-5
-const _STRIDE: int = 1 + FOOT1_HOLD    # half cycle: other foot lands as this one shows foot2
-const _CYCLE: int = _STRIDE * 2        # leaves FOOT1_HOLD - 3 empty (swing) frames per foot
+const _CYCLE: int = _STEP + EMPTY_FRAMES
+const _STRIDE: float = _CYCLE / 2.0    # other foot is half a cycle behind (may land mid-frame)
 const HOVER_TINT: Color = Color(1.3, 1.3, 1.3)
 
 const _FOOT_PX: Vector2 = Vector2(64.0, 68.0)
@@ -24,7 +25,7 @@ var _right: TextureRect
 var _region: Rect2 = Rect2()
 var _over: bool = false
 var _mouse_walking: bool = false  # we pressed walk_forward on the mouse's behalf
-var _walk_time: float = _STRIDE * FRAME_TIME
+var _walk_frames: float = _STRIDE  # gait clock, in frames
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -85,14 +86,13 @@ func _process(delta: float) -> void:
 	if not GameManager.is_playing or not Input.is_action_pressed(&"walk_forward"):
 		# Start mid-gait (left lifting, right landing) so motion begins at once,
 		# not with the left foot sitting planted on foot1.
-		_walk_time = _STRIDE * FRAME_TIME
+		_walk_frames = _STRIDE
 		_left.texture = _frames[1]
 		_right.texture = _frames[1]
 		return
-	var f: int = int(_walk_time / FRAME_TIME)
-	_walk_time += delta
-	_left.texture = _cycle_frame(f)
-	_right.texture = _cycle_frame(f - _STRIDE)
+	_left.texture = _cycle_frame(floori(_walk_frames))
+	_right.texture = _cycle_frame(floori(_walk_frames - _STRIDE))
+	_walk_frames += delta / FRAME_TIME
 
 func _cycle_frame(f: int) -> Texture2D:
 	var i: int = posmod(f, _CYCLE)

@@ -4,8 +4,10 @@ const GOAL_DISTANCE: float = 100.0
 const WATER_LEVEL_MAX: float = 2.0  # metres deep at 100m from shore
 const KNOCKBACK_SCALE: float = 0.6
 const ARRIVAL_DELAY: float = 11.0   # seconds after crossing 100m before ending
+const STILL_DELAY: float = 60.0     # seconds without walking before the "still" ending
 # Pocket stones drag you down: full depth is reached this near shore, then holds.
 const STONES_DEPTH_DISTANCE: float = 50.0
+const SAVE_PATH: String = "user://progress.cfg"
 
 # Player/camera heights (metres) — single source of truth for everything that cares.
 const STANDING_HEIGHT: float = 2.0
@@ -21,17 +23,25 @@ var cam_x: float = 0.0             # lateral sway (m)
 var cam_roll: float = 0.0          # radians
 
 var is_playing: bool = false
-var run_count: int = 0
+var ending_counts: Dictionary = {}   # StringName ending -> times reached (persisted)
+var ending_streak: int = 0           # consecutive runs ending the same way as the last one
+var last_ending: StringName = &""
 var _arrival_stinger_played: bool = false
 var _arrival_timer: float = -1.0
+var _still_time: float = 0.0
 
 func _ready() -> void:
+	_load()
 	SignalBus.game_ended.connect(_on_game_ended)
 	is_playing = false
 
 func _process(delta: float) -> void:
 	if not is_playing:
 		return
+	_still_time = 0.0 if Input.is_action_pressed(&"walk_forward") else _still_time + delta
+	if _still_time >= STILL_DELAY:
+		_still_time = 0.0
+		SignalBus.game_ended.emit(&"still")
 	if distance >= GOAL_DISTANCE and not _arrival_stinger_played:
 		_arrival_stinger_played = true
 		AudioManager.play_stinger_bad()
@@ -65,7 +75,10 @@ func _on_game_ended(ending: StringName) -> void:
 	if not is_playing:
 		return
 	is_playing = false
-	run_count += 1
+	ending_counts[ending] = int(ending_counts.get(ending, 0)) + 1
+	ending_streak = ending_streak + 1 if ending == last_ending else 1
+	last_ending = ending
+	_save()
 	print("[GAME ENDED] %s | distance: %.1fm | drown: %.0f%%" % [
 		ending, distance, DrownMeter.value * 100.0
 	])
@@ -75,4 +88,22 @@ func reset() -> void:
 	is_playing = true
 	_arrival_stinger_played = false
 	_arrival_timer = -1.0
+	_still_time = 0.0
 	SignalBus.game_reset.emit()
+
+func _load() -> void:
+	var cfg := ConfigFile.new()
+	if cfg.load(SAVE_PATH) != OK:
+		return
+	last_ending = StringName(cfg.get_value("progress", "last_ending", ""))
+	ending_streak = cfg.get_value("progress", "streak", 0)
+	for k: String in cfg.get_section_keys("endings"):
+		ending_counts[StringName(k)] = cfg.get_value("endings", k, 0)
+
+func _save() -> void:
+	var cfg := ConfigFile.new()
+	cfg.set_value("progress", "last_ending", String(last_ending))
+	cfg.set_value("progress", "streak", ending_streak)
+	for k: StringName in ending_counts:
+		cfg.set_value("endings", String(k), ending_counts[k])
+	cfg.save(SAVE_PATH)

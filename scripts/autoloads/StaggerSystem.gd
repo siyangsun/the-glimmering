@@ -21,17 +21,13 @@ func add_stagger(effective_force: float) -> void:
 func stand_up() -> void:
 	is_knocked_down = false
 	value = 0.0
-	SignalBus.stood_up.emit()
 
 func _ready() -> void:
 	SignalBus.game_reset.connect(reset)
 
 func reset() -> void:
 	value = 0.0
-	if is_knocked_down:
-		is_knocked_down = false
-		SignalBus.stood_up.emit()
+	is_knocked_down = false
 
 func _knock_down() -> void:
 	is_knocked_down = true
-	SignalBus.knocked_down.emit()

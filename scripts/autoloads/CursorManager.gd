@@ -16,6 +16,10 @@ extends Node
 
 const CURSOR_SCALE: float = 4.0  # the pixel-art sprites are small at native size
 
+# Hand trembles once drown passes SHAKE_START (25%); jitter grows to SHAKE_MAX_PX at full drown.
+const SHAKE_START: float = 0.25
+const SHAKE_MAX_PX: float = 8.0
+
 # Cursor gets tinted blue while goggles are worn, matching the screen filter.
 const GOGGLE_CURSOR_TINT: Color = Color(0.45, 0.74, 0.92)
 
@@ -129,6 +133,9 @@ func _place(mouse_pos: Vector2) -> void:
 	if _active_flip and _active in _textures:
 		hotspot.x = (_textures[_active] as Texture2D).get_width() - hotspot.x
 	_sprite.position = mouse_pos - hotspot * CURSOR_SCALE
+	if GameManager.is_playing and DrownMeter.value > SHAKE_START:
+		var amt: float = (DrownMeter.value - SHAKE_START) / (1.0 - SHAKE_START) * SHAKE_MAX_PX
+		_sprite.position += Vector2(randf_range(-amt, amt), randf_range(-amt, amt))
 
 func _apply() -> void:
 	var want: StringName = _resolve()

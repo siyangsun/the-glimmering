@@ -49,7 +49,6 @@ func collect(id: StringName) -> void:
 	if not is_collected(id):
 		collected.append(id)
 		_save()
-	SignalBus.item_collected.emit(id)
 
 func set_enabled(id: StringName, state: bool) -> void:
 	if state and not is_enabled(id):

@@ -10,11 +10,8 @@ func _process(delta: float) -> void:
 		return
 	_timer -= delta
 	if _timer <= 0.0:
-		_fire_wave()
+		spawn_wave(WavePhysics.rayleigh_height())
 		_timer = WavePhysics.next_interval(GameManager.water_level(), PLAYER_SPEED)
-
-func _fire_wave() -> void:
-	spawn_wave(WavePhysics.rayleigh_height())
 
 func spawn_wave(height: float) -> void:
 	var wave := WaveData.new()

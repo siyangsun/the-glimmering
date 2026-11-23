@@ -8,7 +8,7 @@ extends Node
 #
 #   5   render        ocean, waves, floating items, paper boat   (tscn)
 #   6   rain          rainstick streaks
-#   7   dev-text      "meters from shore" overlay, posterized into the world (tscn)
+#   7   dev-text      "meters from shore" overlay, posterized into the world
 #   8   post-process  posterize + dither; reads everything below (tscn)
 #   9   blind         blindness darkening
 #   10  eye           eye-splash droplets
@@ -383,7 +383,7 @@ func _build_laf_entry(id: StringName, font: Font, anchor_top: float) -> Control:
 func _on_game_ended(ending: StringName) -> void:
 	_clear_items()
 	await get_tree().create_timer(1.8).timeout
-	var msg: String = "you drowned." if ending == &"drown" else "you have arrived."
+	var msg: String = Endings.message_for(ending)
 	if ending == &"drown":
 		AudioManager.play_elegy_loop()
 	_show_menu(msg, Endings.epitaph_for(ending))
