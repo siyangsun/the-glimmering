@@ -78,23 +78,22 @@ func _ready() -> void:
 
 func _on_wave_hit_splash(wave_data: WaveData) -> void:
 	var unsubmerged_h: float = GameManager.unsubmerged_height()
-	if wave_data.height < 0.5 * unsubmerged_h:
-		return
+	var spray: bool = wave_data.height < 0.5 * unsubmerged_h  # small wave: a light mist, not a splash
 	var vp: Rect2  = get_viewport_rect()
 	var vw: float  = vp.size.x
 	var vh: float  = vp.size.y
 	# norm_strength: 0 at the minimum threshold, 1 at 2× unsubmerged height.
-	var norm: float = clampf((wave_data.height - 0.5 * unsubmerged_h) / (1.5 * unsubmerged_h), 0.0, 1.0)
-	var n: int = int(randf_range(5.0, 10.0) + norm * 14.0)
+	var norm: float = 0.0 if spray else clampf((wave_data.height - 0.5 * unsubmerged_h) / (1.5 * unsubmerged_h), 0.0, 1.0)
+	var n: int = randi_range(3, 6) if spray else int(randf_range(5.0, 10.0) + norm * 14.0)
 	for i in range(n):
-		var speed: float  = randf_range(200.0, 450.0) + norm * 500.0
+		var speed: float  = randf_range(150.0, 300.0) if spray else randf_range(200.0, 450.0) + norm * 500.0
 		var spread: float = randf_range(-0.55, 0.55)
 		_splash_blobs.append({
 			"px":    vw * 0.5 + randf_range(-vw * 0.30, vw * 0.30),
 			"py":    vh * randf_range(0.78, 0.96),
 			"vx":    sin(spread) * speed,
 			"vy":    -cos(spread) * speed,
-			"r":     randf_range(7.0, 18.0) + norm * 10.0,
+			"r":     randf_range(4.0, 9.0) if spray else randf_range(7.0, 18.0) + norm * 10.0,
 			"alpha": randf_range(0.65, 1.0),
 		})
 

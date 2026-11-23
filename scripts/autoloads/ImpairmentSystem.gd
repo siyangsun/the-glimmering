@@ -7,6 +7,7 @@ const EAR_NOSE_THRESHOLD: float = 0.90
 const EYE_DAMAGE_PER_FORCE: float = 18.0
 const EYE_TALL_BONUS: float = 1.0  # extra eye damage scaling with wave height / player height
 const EYE_STAGGER_MULT: float = 1.5  # extra eye damage while knocked down
+const EYE_SPRAY_PER_METRE: float = 16.0  # light eye damage from waves too small for a full splash
 const EYE_MAX: float = 100.0
 const EYE_RECOVERY_RATE: float = 1.5  # points/s — only active when below threshold
 const EYE_RECOVERY_MAX: float = 60.0  # stops auto-recovering at or above this value
@@ -66,6 +67,13 @@ func _on_wave_hit(wave_data: WaveData) -> void:
 		var stagger_mult: float = EYE_STAGGER_MULT if StaggerSystem.is_knocked_down else 1.0
 		var eye_dmg: float = wave_data.force * EYE_DAMAGE_PER_FORCE * tall_mult * stagger_mult * (SHIELD_FACTOR if eyes_shielded else 1.0) * goggle_factor
 		eyes_value = minf(eyes_value + eye_dmg, EYE_MAX)
+	else:
+		# Sea spray: small waves still flick a little water in the eyes. Light enough
+		# that the passive recovery (below EYE_RECOVERY_MAX) clears it.
+		var spray: float = wave_data.height * EYE_SPRAY_PER_METRE * (SHIELD_FACTOR if eyes_shielded else 1.0)
+		if ItemManager.is_enabled(&"goggles"):
+			spray *= 0.1
+		eyes_value = minf(eyes_value + spray, EYE_MAX)
 
 	if effective_height >= EAR_NOSE_THRESHOLD * player_h:
 		_set_impairment(&"nose", true)
