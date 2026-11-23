@@ -58,7 +58,7 @@ func _ready() -> void:
 	add_child(pause)
 	SignalBus.game_ended.connect(_on_game_ended)
 	SignalBus.wave_hit.connect(_on_wave_hit_flash)
-	_show_menu()
+	_show_intro()
 
 func _process(_delta: float) -> void:
 	if not GameManager.is_playing:
@@ -132,6 +132,41 @@ func _clear_items() -> void:
 	if _paper_boat != null and is_instance_valid(_paper_boat):
 		_paper_boat.queue_free()
 		_paper_boat = null
+
+# ── Intro ─────────────────────────────────────────────────────────────────────
+
+# ~4s title card on first load. The fading text keeps the black screen from reading
+# as frozen; the menu appears underneath as the card fades out.
+func _show_intro() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = LAYER_MENU + 1
+	add_child(layer)
+	var bg := ColorRect.new()
+	bg.color = Color.BLACK
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	layer.add_child(bg)
+	var title := Label.new()
+	title.text = "salt on my eyelids again.."
+	title.set_anchors_preset(Control.PRESET_FULL_RECT)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	title.add_theme_font_override(&"font", _palatino_italic())
+	title.add_theme_font_size_override(&"font_size", 32)
+	title.modulate.a = 0.0
+	layer.add_child(title)
+	var t := create_tween()
+	t.tween_property(title, "modulate:a", 1.0, 1.8)
+	t.tween_interval(1.4)
+	t.tween_callback(_show_menu)
+	t.tween_property(bg, "modulate:a", 0.0, 0.8)
+	t.parallel().tween_property(title, "modulate:a", 0.0, 0.8)
+	t.tween_callback(layer.queue_free)
+	# Hidden skip: any click jumps straight to the menu. No on-screen hint, on purpose.
+	bg.gui_input.connect(func(e: InputEvent) -> void:
+		if e is InputEventMouseButton and (e as InputEventMouseButton).pressed:
+			t.kill()
+			_show_menu()
+			layer.queue_free())
 
 # ── Menu ──────────────────────────────────────────────────────────────────────
 
