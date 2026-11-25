@@ -40,7 +40,7 @@ func _process(delta: float) -> void:
 		return
 
 	var speed: float = 0.0
-	if OS.is_debug_build() and Input.is_key_pressed(KEY_SHIFT):  # dev fast-forward
+	if OS.is_debug_build() and Input.is_key_pressed(KEY_SHIFT) and Input.is_action_pressed(&"walk_forward"):  # dev sprint: shift only counts while walking
 		GameManager.advance(10.0 * delta)
 	elif StaggerSystem.is_knocked_down:
 		# W stands you up when knocked down
